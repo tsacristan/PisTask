@@ -1,4 +1,4 @@
-package com.example.pistask.ui.theme
+package com.example.pistask.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
