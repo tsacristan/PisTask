@@ -1,5 +1,6 @@
 package com.example.pistask.presentation.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,86 +14,105 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.pistask.R
 import com.example.pistask.presentation.theme.Blanc
 import com.example.pistask.presentation.theme.Marron
 import com.example.pistask.presentation.theme.VertPistacheClair
+import com.example.pistask.presentation.theme.VertPistacheFoncee
+import com.example.pistask.presentation.theme.BackgroundCream
 
 @Composable
 fun HomeScene(modifier: Modifier = Modifier) {
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = {}, containerColor = VertPistacheClair) {
-                Text(text = "+", color = Blanc)
-            }
-        },
-        bottomBar = {
-            BottomAppBar(containerColor = Marron) {
+    // HomeScene gère uniquement le contenu — la barre de navigation est gérée par l'activité
+    Column(
+        modifier = Modifier
+            .then(modifier)
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+    ) {
+        // En-tête : badge (gauche) + logo (droite)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Badge gauche
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = BackgroundCream
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "TÂCHES", color = VertPistacheClair)
-                    Text(text = "", modifier = Modifier.width(48.dp))
-                    Text(text = "JARDIN", color = Blanc)
+                    Image(
+                        painter = painterResource(id = R.drawable.leaf),
+                        contentDescription = "Badge",
+                        modifier = Modifier.size(20.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "150", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.titleMedium)
                 }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
+
+            // Logo droite
+            Column(horizontalAlignment = Alignment.End) {
+                Image(
+                    painter = painterResource(id = R.drawable.pistache),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(56.dp),
+                    contentScale = ContentScale.Crop
+                )
+                Text(text = "Pïstask", color = VertPistacheFoncee, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        // Top card (résumé)
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp)
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
         ) {
-            // Top card (résumé)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "GESTIONNAIRE DE TÂCHES", color = MaterialTheme.colorScheme.onPrimary)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "2 / 3 complétés", color = MaterialTheme.colorScheme.onPrimary)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Liste d'exemples de cartes
+        repeat(3) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "GESTIONNAIRE DE TÂCHES", color = MaterialTheme.colorScheme.onPrimary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "2 / 3 complétés", color = MaterialTheme.colorScheme.onPrimary)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Liste d'exemples de cartes
-            repeat(3) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp)))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = "Exemple", color = MaterialTheme.colorScheme.onSurface)
-                    }
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp)))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Exemple", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
