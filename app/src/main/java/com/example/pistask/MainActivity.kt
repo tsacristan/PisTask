@@ -4,12 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.graphics.toColorInt
+import android.graphics.Color as AndroidColor
+import com.example.pistask.presentation.jardin.JardinScene
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 
@@ -17,11 +31,71 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // edge-to-edge config and set system navigation bar color to match the app nav bar
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = "#1C1C14".toColorInt() // Marron
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
+
         setContent {
             PisTaskTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScene(modifier = Modifier.padding(innerPadding))
+                // Utilise un Scaffold racine : on met la nav bar dans bottomBar pour éviter les doublons
+                val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                val items: List<com.example.pistask.presentation.navigation.Screen> = listOf(
+                    com.example.pistask.presentation.navigation.Screen.Tache,
+                    com.example.pistask.presentation.navigation.Screen.Jardin
+                )
+
+                var showAddDialog by remember { mutableStateOf(false) }
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        com.example.pistask.presentation.navigation.MyBottomNavigationBar(
+                            items = items,
+                            currentRoute = currentRoute,
+                            onItemClick = { route: String ->
+                                if (route != currentRoute) {
+                                    navController.navigate(route) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            },
+                            centerButtonSizeDp = 130,
+                            centerIconSizeDp = 60,
+                            centerVerticalOffsetDp = -24,
+                            centerOnClick = { showAddDialog = true }
+                        )
+                    },
+                    containerColor = MaterialTheme.colorScheme.background
+                ) { innerPadding ->
+                    // NavHost: routes pour la bottom navigation
+                    NavHost(
+                        navController = navController,
+                        startDestination = com.example.pistask.presentation.navigation.Screen.Tache.route,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(com.example.pistask.presentation.navigation.Screen.Tache.route) {
+                            HomeScene()
+                        }
+                        composable(com.example.pistask.presentation.navigation.Screen.Jardin.route) {
+                            // simple placeholder
+                            JardinScene()
+                        }
+                    }
                 }
+
+                // Dialog d'ajout — s'affiche en popup au-dessus de tout
+                com.example.pistask.presentation.add.AjouterTacheDialog(
+                    show = showAddDialog,
+                    onDismiss = { showAddDialog = false },
+                    onSave = { title: String, description: String ->
+                        // TODO: sauvegarder la tâche (pour l'instant on ferme)
+                        showAddDialog = false
+                    }
+                )
             }
         }
     }

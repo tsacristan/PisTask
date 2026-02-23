@@ -59,15 +59,9 @@ fun PisTaskTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Force le même jeu de couleurs pour clair et sombre (on veut l'aspect identique)
+    // On ignore la coloration dynamique pour garder le rendu constant.
+    val colorScheme = LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
