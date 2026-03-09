@@ -7,11 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.graphics.toColorInt
-import android.graphics.Color as AndroidColor
 import com.example.pistask.presentation.jardin.JardinScene
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -19,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -34,8 +33,10 @@ class MainActivity : ComponentActivity() {
 
         // edge-to-edge config and set system navigation bar color to match the app nav bar
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = "#1C1C14".toColorInt() // Marron
+        window.navigationBarColor = "#1C1C14".toColorInt() // même couleur que la nav bar
+        window.statusBarColor = "#1C1C14".toColorInt() // barre système du haut = même couleur
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         setContent {
             PisTaskTheme {
@@ -69,13 +70,14 @@ class MainActivity : ComponentActivity() {
                             centerOnClick = { showAddDialog = true }
                         )
                     },
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 ) { innerPadding ->
                     // NavHost: routes pour la bottom navigation
+                    // Padding top via WindowInsets (status bar), la nav bar est en overlay
                     NavHost(
                         navController = navController,
                         startDestination = com.example.pistask.presentation.navigation.Screen.Tache.route,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(top = innerPadding.calculateTopPadding())
                     ) {
                         composable(com.example.pistask.presentation.navigation.Screen.Tache.route) {
                             HomeScene()

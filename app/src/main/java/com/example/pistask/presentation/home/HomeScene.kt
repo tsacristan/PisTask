@@ -32,23 +32,29 @@ import com.example.pistask.presentation.theme.VertPistacheFoncee
 
 @Composable
 fun HomeScene(modifier: Modifier = Modifier) {
-    // HomeScene gère uniquement le contenu — la barre de navigation est gérée par l'activité
+    val tasks = listOf(
+        com.example.pistask.presentation.components.Task(1, "Réviser le diagramme", "Apprendre les relations UML", com.example.pistask.presentation.components.Recurrence.QUOTIDIEN, "2024-05-20", com.example.pistask.presentation.components.Priorite.HAUTE, 50),
+        com.example.pistask.presentation.components.Task(2, "Arroser les plantes", "Remplir l'arrosoir", com.example.pistask.presentation.components.Recurrence.TRIMESTRIEL, "2024-05-22", com.example.pistask.presentation.components.Priorite.MOYENNE, 20),
+        com.example.pistask.presentation.components.Task(3, "Nettoyer le jardin", "Ramasser les feuilles", com.example.pistask.presentation.components.Recurrence.HEBDOMADAIRE, "2024-05-25", com.example.pistask.presentation.components.Priorite.BASSE, 10)
+    )
+
     Column(
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
     ) {
+        // ── PARTIE FIXE (non scrollable) ──────────────────────────────
+
         // En-tête : badge (gauche) + logo (droite)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(top = 16.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Badge gauche -> rectangle blanc très arrondi contenant l'icône eau + points
             Surface(
                 shape = RoundedCornerShape(30.dp),
                 color = Color.White,
@@ -69,7 +75,6 @@ fun HomeScene(modifier: Modifier = Modifier) {
                 }
             }
 
-            // Logo droite
             Column(horizontalAlignment = Alignment.End) {
                 Image(
                     painter = painterResource(id = R.drawable.pistache),
@@ -98,16 +103,15 @@ fun HomeScene(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Titre "Vos tâches" fixe
         Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(8.dp))
 
-        val tasks = listOf(
-            com.example.pistask.presentation.components.Task(1, "Réviser le diagramme", "Apprendre les relations UML", "2024-05-20", com.example.pistask.presentation.components.Difficulty.HIGH, 50),
-            com.example.pistask.presentation.components.Task(2, "Arroser les plantes", "Remplir l'arrosoir", "2024-05-22", com.example.pistask.presentation.components.Difficulty.MEDIUM, 20),
-            com.example.pistask.presentation.components.Task(3, "Nettoyer le jardin", "Ramasser les feuilles", "2024-05-25", com.example.pistask.presentation.components.Difficulty.LOW, 10)
-        )
-
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // ── LISTE SCROLLABLE ──────────────────────────────────────────
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+        ) {
             items(tasks) { task ->
                 com.example.pistask.presentation.components.TaskCard(task = task)
             }

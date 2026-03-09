@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,23 +29,29 @@ import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 import com.example.pistask.presentation.theme.Orange
 
-enum class Difficulty { LOW, MEDIUM, HIGH }
+// Priorité
+enum class Priorite { BASSE, MOYENNE, HAUTE }
 
+// Récurrence (FR)
+enum class Recurrence { QUOTIDIEN, HEBDOMADAIRE, MENSUEL, TRIMESTRIEL, SEMESTRIEL, ANNUEL }
+
+// Modèle de données Task
 data class Task(
     val id: Int,
     val title: String,
     val subtitle: String,
+    val recurrence: Recurrence,
     val date: String,
-    val difficulty: Difficulty,
+    val priorite: Priorite,
     val points: Int
 )
 
 @Composable
-fun DifficultyPill(difficulty: Difficulty, modifier: Modifier = Modifier) {
-    val (bg, textColor) = when (difficulty) {
-        Difficulty.LOW -> Pair(VertPistacheClair.copy(alpha = 0.35f), VertPistacheFoncee)
-        Difficulty.MEDIUM -> Pair(VertPistacheClair.copy(alpha = 0.55f), VertPistacheFoncee)
-        Difficulty.HIGH -> Pair(Orange.copy(alpha = 0.25f), Color.Red)
+fun PrioritePill(priorite: Priorite, modifier: Modifier = Modifier) {
+    val (bg, textColor) = when (priorite) {
+        Priorite.BASSE -> Pair(VertPistacheClair.copy(alpha = 0.35f), VertPistacheFoncee)
+        Priorite.MOYENNE -> Pair(VertPistacheClair.copy(alpha = 0.55f), VertPistacheFoncee)
+        Priorite.HAUTE -> Pair(Orange.copy(alpha = 0.25f), Color.Red)
     }
 
     Box(
@@ -54,11 +61,15 @@ fun DifficultyPill(difficulty: Difficulty, modifier: Modifier = Modifier) {
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = when (difficulty) {
-            Difficulty.LOW -> "BASSE"
-            Difficulty.MEDIUM -> "MOYENNE"
-            Difficulty.HIGH -> "HAUTE"
-        }, style = MaterialTheme.typography.labelSmall, color = textColor)
+        Text(
+            text = when (priorite) {
+                Priorite.BASSE -> "BASSE"
+                Priorite.MOYENNE -> "MOYENNE"
+                Priorite.HAUTE -> "HAUTE"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor
+        )
     }
 }
 
@@ -74,7 +85,11 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
         tonalElevation = 2.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Placeholder icon circle
                     Box(
@@ -84,15 +99,25 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
                             .background(VertPistacheClair.copy(alpha = 0.15f))
                             .border(2.dp, VertPistacheFoncee, RoundedCornerShape(10.dp))
                     )
-                    Spacer(modifier = Modifier.size(12.dp))
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
                     Column {
-                        Text(text = task.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = task.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        Text(
+                            text = task.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 }
 
-                DifficultyPill(difficulty = task.difficulty)
+                PrioritePill(priorite = task.priorite)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -104,13 +129,50 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // small metadata (date)
-                    Text(text = task.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    val recurrenceLabel = when (task.recurrence) {
+                        Recurrence.QUOTIDIEN -> "QUOTIDIEN"
+                        Recurrence.HEBDOMADAIRE -> "HEBDOMADAIRE"
+                        Recurrence.MENSUEL -> "MENSUEL"
+                        Recurrence.TRIMESTRIEL -> "TRIMESTRIEL"
+                        Recurrence.SEMESTRIEL -> "SEMESTRIEL"
+                        Recurrence.ANNUEL -> "ANNUEL"
+                    }
+
+                    // Capsule récurrence
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
+                    ) {
+                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = recurrenceLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // date
+                    Text(
+                        text = task.date,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 }
 
-                Text(text = "+${task.points} pts", style = MaterialTheme.typography.bodyMedium, color = VertPistacheFoncee)
+                Text(
+                    text = "+${task.points} pts",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VertPistacheFoncee
+                )
             }
         }
     }
@@ -119,6 +181,14 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
 @Preview(showBackground = true, widthDp = 360)
 @Composable
 fun TaskCardPreview() {
-    val sample = Task(1, "Réviser le diagramme", "Apprendre les relations UML", "2024-05-20", Difficulty.HIGH, 50)
+    val sample = Task(
+        id = 1,
+        title = "Réviser le diagramme",
+        subtitle = "Apprendre les relations UML",
+        recurrence = Recurrence.QUOTIDIEN,
+        date = "2024-05-20",
+        priorite = Priorite.HAUTE,
+        points = 50
+    )
     TaskCard(task = sample)
 }
