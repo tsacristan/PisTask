@@ -56,22 +56,29 @@ fun MyBottomNavigationBar(
     val defaultOffset = -centerSize / 2
     val centerOffset = centerVerticalOffsetDp?.dp ?: defaultOffset
 
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .height(barHeight + centerSize / 2)
-        .navigationBarsPadding()) {
-
-        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(barHeight + centerSize / 2)
+            .navigationBarsPadding()
+    ) {
+        // Fond marron uniquement sur la barre basse — pas sur le parent
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(barHeight)
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .background(Marron)
+        ) {
             NavigationBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(barHeight)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Marron)
                     .padding(horizontal = 16.dp),
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 8.dp
+                tonalElevation = 0.dp
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     items.forEach { screen ->
@@ -104,11 +111,13 @@ fun MyBottomNavigationBar(
             }
         }
 
-        Box(modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .offset(y = centerOffset)) {
+        // Bouton pistache flottant au-dessus de la barre, sans fond derrière lui
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = centerOffset)
+        ) {
             PistacheCenterButton(
-                modifier = Modifier,
                 sizeDp = centerButtonSizeDp,
                 iconSizeDp = centerIconSizeDp,
                 onClick = centerOnClick

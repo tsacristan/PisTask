@@ -3,7 +3,6 @@ package com.example.pistask.presentation.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,51 +27,54 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.pistask.R
-import com.example.pistask.presentation.theme.Blanc
-import com.example.pistask.presentation.theme.Marron
-import com.example.pistask.presentation.theme.VertPistacheClair
+import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertPistacheFoncee
-import com.example.pistask.presentation.theme.BackgroundCream
 
 @Composable
 fun HomeScene(modifier: Modifier = Modifier) {
-    // HomeScene gère uniquement le contenu — la barre de navigation est gérée par l'activité
+    val tasks = listOf(
+        com.example.pistask.presentation.components.Task(1, "Réviser le diagramme", "Apprendre les relations UML", com.example.pistask.presentation.components.Recurrence.QUOTIDIEN, "2024-05-20", com.example.pistask.presentation.components.Priorite.HAUTE, 50),
+        com.example.pistask.presentation.components.Task(2, "Arroser les plantes", "Remplir l'arrosoir", com.example.pistask.presentation.components.Recurrence.TRIMESTRIEL, "2024-05-22", com.example.pistask.presentation.components.Priorite.MOYENNE, 20),
+        com.example.pistask.presentation.components.Task(3, "Nettoyer le jardin", "Ramasser les feuilles", com.example.pistask.presentation.components.Recurrence.HEBDOMADAIRE, "2024-05-25", com.example.pistask.presentation.components.Priorite.BASSE, 10)
+    )
+
     Column(
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
     ) {
+        // ── PARTIE FIXE (non scrollable) ──────────────────────────────
+
         // En-tête : badge (gauche) + logo (droite)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(top = 16.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Badge gauche
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = BackgroundCream
+                shape = RoundedCornerShape(30.dp),
+                color = Color.White,
+                tonalElevation = 0.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.leaf),
-                        contentDescription = "Badge",
-                        modifier = Modifier.size(20.dp),
-                        contentScale = ContentScale.Fit
+                        painter = painterResource(id = R.drawable.droplets),
+                        contentDescription = "Eau",
+                        modifier = Modifier.size(28.dp),
+                        colorFilter = ColorFilter.tint(BleuTurquoise)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "150", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "150", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.titleLarge)
                 }
             }
 
-            // Logo droite
             Column(horizontalAlignment = Alignment.End) {
                 Image(
                     painter = painterResource(id = R.drawable.pistache),
@@ -97,23 +103,17 @@ fun HomeScene(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Titre "Vos tâches" fixe
         Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Liste d'exemples de cartes
-        repeat(3) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp)))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Exemple", color = MaterialTheme.colorScheme.onSurface)
-                }
+        // ── LISTE SCROLLABLE ──────────────────────────────────────────
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+        ) {
+            items(tasks) { task ->
+                com.example.pistask.presentation.components.TaskCard(task = task)
             }
         }
     }
