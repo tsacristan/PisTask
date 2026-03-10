@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                 )
 
                 var showAddDialog by remember { mutableStateOf(false) }
+                var tasks by remember { mutableStateOf(listOf<Task>()) }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -81,7 +82,14 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(top = innerPadding.calculateTopPadding())
                     ) {
                         composable(com.example.pistask.presentation.navigation.Screen.Tache.route) {
-                            HomeScene()
+                            HomeScene(
+                                tasks = tasks,
+                                onTaskCheck = { checkedTask ->
+                                    tasks = tasks.map {
+                                        if (it.id == checkedTask.id) it.copy(isCompleted = !it.isCompleted) else it
+                                    }.sortedBy { it.isCompleted }
+                                }
+                            )
                         }
                         composable(com.example.pistask.presentation.navigation.Screen.Jardin.route) {
                             // simple placeholder
@@ -90,12 +98,35 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Dialog d'ajout — s'affiche en popup au-dessus de tout
+                // Dialog d'ajout s'affiche en popup au-dessus de tout
                 com.example.pistask.presentation.add.AjouterTacheDialog(
                     show = showAddDialog,
                     onDismiss = { showAddDialog = false },
-                    onSave = { title: String, description: String ->
-                        // TODO: sauvegarder la tâche (pour l'instant on ferme)
+                    onSave = { title, subtitle, date, recurrence, priorite ->
+                        try {
+                            val newTask = Task(
+                                id = tasks.size + 1,
+                                title = title,
+                                subtitle = subtitle,
+                                recurrence = Recurrence.valueOf(recurrence.uppercase()),
+                                date = date,
+                                priorite = Priorite.valueOf(priorite.uppercase()),
+                                points = 10
+                            )
+                            tasks = tasks + newTask
+                        } catch (e: Exception) {
+                            // Fallback or log error for invalid enum values
+                            val newTask = Task(
+                                id = tasks.size + 1,
+                                title = title,
+                                subtitle = subtitle,
+                                recurrence = Recurrence.QUOTIDIEN,
+                                date = date,
+                                priorite = Priorite.MOYENNE,
+                                points = 10
+                            )
+                            tasks = tasks + newTask
+                        }
                         showAddDialog = false
                     }
                 )
@@ -108,6 +139,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HomePreview() {
     PisTaskTheme {
-        HomeScene()
+        HomeScene(tasks = listOf(
+            Task(1, "Exemple 1", "Description 1", Recurrence.QUOTIDIEN, "2026-03-09", Priorite.HAUTE, 10),
+            Task(2, "Exemple 2", "Description 2", Recurrence.HEBDOMADAIRE, "2026-03-10", Priorite.BASSE, 10)
+        ), onTaskCheck = {})
     }
 }
