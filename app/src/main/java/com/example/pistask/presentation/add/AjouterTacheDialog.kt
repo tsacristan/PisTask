@@ -1,5 +1,6 @@
 package com.example.pistask.presentation.add
 
+import android.app.DatePickerDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -17,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Calendar
 
 @Composable
 fun AjouterTacheDialog(
@@ -27,24 +30,43 @@ fun AjouterTacheDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, String, String) -> Unit
 ) {
+    val context = LocalContext.current
+
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var recurrence by remember { mutableStateOf("Quotidien") }
-    var priority by remember { mutableStateOf("Moyenne") }
+    var recurrence by remember { mutableStateOf("") }
+    var priority by remember { mutableStateOf("") }
 
     var expandedRecurrence by remember { mutableStateOf(false) }
     val recurrenceOptions = listOf("Quotidien", "Hebdomadaire", "Mensuel", "Trimestriel", "Annuel")
     var expandedPriority by remember { mutableStateOf(false) }
     val priorityOptions = listOf("Basse", "Moyenne", "Haute")
 
-    // Déclenchement de la validation (seulement après une tentative d'envoi)
+    // Déclenchement de la validation
     var tentativeEnvoi by remember { mutableStateOf(false) }
 
-    val formulaireValide = title.trim().isNotEmpty() && date.trim().isNotEmpty()
+    val formulaireValide = title.trim().isNotEmpty()
+            && date.trim().isNotEmpty()
+            && recurrence.trim().isNotEmpty()
+            && priority.trim().isNotEmpty()
 
-    val erreurTitre = tentativeEnvoi && title.trim().isEmpty()
-    val erreurDate = tentativeEnvoi && date.trim().isEmpty()
+    val erreurTitre      = tentativeEnvoi && title.trim().isEmpty()
+    val erreurDate       = tentativeEnvoi && date.trim().isEmpty()
+    val erreurRecurrence = tentativeEnvoi && recurrence.trim().isEmpty()
+    val erreurPriorite   = tentativeEnvoi && priority.trim().isEmpty()
+
+    // DatePickerDialog natif
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, day ->
+            date = "%02d/%02d/%04d".format(day, month + 1, year)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     AnimatedVisibility(
         visible = show,
@@ -63,14 +85,11 @@ fun AjouterTacheDialog(
                     .align(Alignment.BottomCenter)
                     .clickable(enabled = false, onClick = {}),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+
+                    // ── En-tête ──────────────────────────────────────────────
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,14 +106,17 @@ fun AjouterTacheDialog(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // ── Titre ────────────────────────────────────────────────
                     Text(text = "DÉTAILS DE LA TÂCHE", color = Color.Gray, fontSize = 12.sp)
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Titre...") },
+                        placeholder = { Text("Ex : Arroser les plantes", color = Color.Gray) },
+                        label = { Text("Titre") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        isError = erreurTitre
+                        isError = erreurTitre,
+                        singleLine = true
                     )
                     if (erreurTitre) {
                         Text(
@@ -105,30 +127,46 @@ fun AjouterTacheDialog(
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    // ── Description ──────────────────────────────────────────
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Description (optionnel)...") },
+                        placeholder = { Text("Ex : Penser aux cactus du balcon", color = Color.Gray) },
+                        label = { Text("Description (optionnel)") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        minLines = 2,
+                        maxLines = 3
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // ── Date + Récurrence ────────────────────────────────────
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Date
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "DATE LIMITE", color = Color.Gray, fontSize = 12.sp)
                             OutlinedTextField(
                                 value = date,
-                                onValueChange = { date = it },
-                                label = { Text("13/02/2026") },
+                                onValueChange = {},
+                                placeholder = { Text("jj/mm/aaaa", color = Color.Gray) },
+                                label = { Text("Date") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
+                                readOnly = true,
                                 isError = erreurDate,
                                 trailingIcon = {
-                                    Icon(Icons.Default.DateRange, contentDescription = "Date")
+                                    IconButton(onClick = { datePickerDialog.show() }) {
+                                        Icon(
+                                            Icons.Default.DateRange,
+                                            contentDescription = "Choisir une date",
+                                            tint = if (erreurDate) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             )
                             if (erreurDate) {
@@ -141,19 +179,36 @@ fun AjouterTacheDialog(
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
+
+                        // Récurrence
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "RÉCURRENCE", color = Color.Gray, fontSize = 12.sp)
                             OutlinedTextField(
                                 value = recurrence,
                                 onValueChange = {},
-                                label = { Text(recurrence) },
-                                modifier = Modifier.fillMaxWidth().clickable { expandedRecurrence = true },
+                                placeholder = { Text("Choisir…", color = Color.Gray) },
+                                label = { Text("Récurrence") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { expandedRecurrence = true },
                                 shape = RoundedCornerShape(8.dp),
                                 readOnly = true,
+                                isError = erreurRecurrence,
                                 trailingIcon = {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Choisir la récurrence")
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "Choisir la récurrence"
+                                    )
                                 }
                             )
+                            if (erreurRecurrence) {
+                                Text(
+                                    text = "Une récurrence est nécessaire",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                                )
+                            }
                             DropdownMenu(
                                 expanded = expandedRecurrence,
                                 onDismissRequest = { expandedRecurrence = false }
@@ -172,18 +227,31 @@ fun AjouterTacheDialog(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // ── Priorité ─────────────────────────────────────────────
                     Text(text = "PRIORITÉ (IMPACT SUR LES POINTS)", color = Color.Gray, fontSize = 12.sp)
                     OutlinedTextField(
                         value = priority,
                         onValueChange = {},
-                        label = { Text(priority) },
-                        modifier = Modifier.fillMaxWidth().clickable { expandedPriority = true },
+                        placeholder = { Text("Choisir…", color = Color.Gray) },
+                        label = { Text("Priorité") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expandedPriority = true },
                         shape = RoundedCornerShape(8.dp),
                         readOnly = true,
+                        isError = erreurPriorite,
                         trailingIcon = {
                             Icon(Icons.Default.ArrowDropDown, contentDescription = "Choisir la priorité")
                         }
                     )
+                    if (erreurPriorite) {
+                        Text(
+                            text = "Une priorité est nécessaire",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                     DropdownMenu(
                         expanded = expandedPriority,
                         onDismissRequest = { expandedPriority = false }
@@ -200,15 +268,24 @@ fun AjouterTacheDialog(
                     }
                     Spacer(modifier = Modifier.height(32.dp))
 
+                    // ── Bouton ───────────────────────────────────────────────
                     Button(
                         onClick = {
                             if (formulaireValide) {
-                                onSave(title.trim(), description.trim(), date.trim(), recurrence.trim(), priority.trim())
+                                onSave(
+                                    title.trim(),
+                                    description.trim(),
+                                    date.trim(),
+                                    recurrence.trim(),
+                                    priority.trim()
+                                )
                             } else {
                                 tentativeEnvoi = true
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (formulaireValide)
