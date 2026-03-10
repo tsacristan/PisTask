@@ -21,22 +21,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.pistask.R
+import com.example.pistask.Task
+import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 
 @Composable
-fun HomeScene(modifier: Modifier = Modifier) {
-    val tasks = listOf(
-        com.example.pistask.presentation.components.Task(1, "Réviser le diagramme", "Apprendre les relations UML", com.example.pistask.presentation.components.Recurrence.QUOTIDIEN, "2024-05-20", com.example.pistask.presentation.components.Priorite.HAUTE, 50),
-        com.example.pistask.presentation.components.Task(2, "Arroser les plantes", "Remplir l'arrosoir", com.example.pistask.presentation.components.Recurrence.TRIMESTRIEL, "2024-05-22", com.example.pistask.presentation.components.Priorite.MOYENNE, 20),
-        com.example.pistask.presentation.components.Task(3, "Nettoyer le jardin", "Ramasser les feuilles", com.example.pistask.presentation.components.Recurrence.HEBDOMADAIRE, "2024-05-25", com.example.pistask.presentation.components.Priorite.BASSE, 10)
-    )
+fun HomeScene(tasks: List<Task>, modifier: Modifier = Modifier, onTaskCheck: (Task) -> Unit) {
+    val completedCount = tasks.count { it.isCompleted }
+    val totalCount = tasks.size
+    val sortedTasks = tasks.sortedBy { it.isCompleted }
 
     Column(
         modifier = Modifier
@@ -97,7 +100,10 @@ fun HomeScene(modifier: Modifier = Modifier) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = "GESTIONNAIRE DE TÂCHES", color = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "2 / 3 complétés", color = MaterialTheme.colorScheme.onPrimary)
+                Text(
+                    text = "$completedCount / $totalCount complétés",
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
 
@@ -112,8 +118,8 @@ fun HomeScene(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
         ) {
-            items(tasks) { task ->
-                com.example.pistask.presentation.components.TaskCard(task = task)
+            items(sortedTasks) { task ->
+                TaskCard(task = task, onCheckClick = { onTaskCheck(task) })
             }
         }
     }

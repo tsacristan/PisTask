@@ -18,33 +18,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.pistask.Priorite
+import com.example.pistask.Recurrence
+import com.example.pistask.Task
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 import com.example.pistask.presentation.theme.Orange
-
-// Priorité
-enum class Priorite { BASSE, MOYENNE, HAUTE }
-
-// Récurrence (FR)
-enum class Recurrence { QUOTIDIEN, HEBDOMADAIRE, MENSUEL, TRIMESTRIEL, SEMESTRIEL, ANNUEL }
-
-// Modèle de données Task
-data class Task(
-    val id: Int,
-    val title: String,
-    val subtitle: String,
-    val recurrence: Recurrence,
-    val date: String,
-    val priorite: Priorite,
-    val points: Int
-)
 
 @Composable
 fun PrioritePill(priorite: Priorite, modifier: Modifier = Modifier) {
@@ -74,12 +64,15 @@ fun PrioritePill(priorite: Priorite, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+fun TaskCard(
+    task: Task,
+    modifier: Modifier = Modifier,
+    onCheckClick: () -> Unit = {},
+) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onClick() },
+            .padding(vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
@@ -91,32 +84,40 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Placeholder icon circle
+                    // Checkbox custom
                     Box(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(VertPistacheClair.copy(alpha = 0.15f))
+                            .background(
+                                if (task.isCompleted) VertPistacheClair.copy(alpha = 0.7f)
+                                else VertPistacheClair.copy(alpha = 0.15f)
+                            )
                             .border(2.dp, VertPistacheFoncee, RoundedCornerShape(10.dp))
-                    )
-
+                            .clickable { onCheckClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (task.isCompleted) {
+                            Icon(Icons.Default.Check, contentDescription = "Complétée", tint = VertPistacheFoncee)
+                        }
+                    }
                     Spacer(modifier = Modifier.width(12.dp))
-
                     Column {
                         Text(
                             text = task.title,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = task.subtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
                         )
                     }
                 }
-
                 PrioritePill(priorite = task.priorite)
             }
 
@@ -160,12 +161,19 @@ fun TaskCard(task: Task, modifier: Modifier = Modifier, onClick: () -> Unit = {}
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // date
-                    Text(
-                        text = task.date,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
+                    // Date butoire
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
+                    ) {
+                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = task.date,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
 
                 Text(
