@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Calendar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AjouterTacheDialog(
     show: Boolean,
@@ -183,24 +183,40 @@ fun AjouterTacheDialog(
                         // Récurrence
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "RÉCURRENCE", color = Color.Gray, fontSize = 12.sp)
-                            OutlinedTextField(
-                                value = recurrence,
-                                onValueChange = {},
-                                placeholder = { Text("Choisir…", color = Color.Gray) },
-                                label = { Text("Récurrence") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { expandedRecurrence = true },
-                                shape = RoundedCornerShape(8.dp),
-                                readOnly = true,
-                                isError = erreurRecurrence,
-                                trailingIcon = {
-                                    Icon(
-                                        Icons.Default.ArrowDropDown,
-                                        contentDescription = "Choisir la récurrence"
-                                    )
+                            ExposedDropdownMenuBox(
+                                expanded = expandedRecurrence,
+                                onExpandedChange = { expandedRecurrence = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = recurrence,
+                                    onValueChange = {},
+                                    placeholder = { Text("Choisir…", color = Color.Gray) },
+                                    label = { Text("Récurrence") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                                    shape = RoundedCornerShape(8.dp),
+                                    readOnly = true,
+                                    isError = erreurRecurrence,
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRecurrence)
+                                    }
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedRecurrence,
+                                    onDismissRequest = { expandedRecurrence = false }
+                                ) {
+                                    recurrenceOptions.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option) },
+                                            onClick = {
+                                                recurrence = option
+                                                expandedRecurrence = false
+                                            }
+                                        )
+                                    }
                                 }
-                            )
+                            }
                             if (erreurRecurrence) {
                                 Text(
                                     text = "Une récurrence est nécessaire",
@@ -209,41 +225,46 @@ fun AjouterTacheDialog(
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                                 )
                             }
-                            DropdownMenu(
-                                expanded = expandedRecurrence,
-                                onDismissRequest = { expandedRecurrence = false }
-                            ) {
-                                recurrenceOptions.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option) },
-                                        onClick = {
-                                            recurrence = option
-                                            expandedRecurrence = false
-                                        }
-                                    )
-                                }
-                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Priorité ─────────────────────────────────────────────
                     Text(text = "PRIORITÉ (IMPACT SUR LES POINTS)", color = Color.Gray, fontSize = 12.sp)
-                    OutlinedTextField(
-                        value = priority,
-                        onValueChange = {},
-                        placeholder = { Text("Choisir…", color = Color.Gray) },
-                        label = { Text("Priorité") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { expandedPriority = true },
-                        shape = RoundedCornerShape(8.dp),
-                        readOnly = true,
-                        isError = erreurPriorite,
-                        trailingIcon = {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Choisir la priorité")
+                    ExposedDropdownMenuBox(
+                        expanded = expandedPriority,
+                        onExpandedChange = { expandedPriority = it }
+                    ) {
+                        OutlinedTextField(
+                            value = priority,
+                            onValueChange = {},
+                            placeholder = { Text("Choisir…", color = Color.Gray) },
+                            label = { Text("Priorité") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                            shape = RoundedCornerShape(8.dp),
+                            readOnly = true,
+                            isError = erreurPriorite,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPriority)
+                            }
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedPriority,
+                            onDismissRequest = { expandedPriority = false }
+                        ) {
+                            priorityOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        priority = option
+                                        expandedPriority = false
+                                    }
+                                )
+                            }
                         }
-                    )
+                    }
                     if (erreurPriorite) {
                         Text(
                             text = "Une priorité est nécessaire",
@@ -251,20 +272,6 @@ fun AjouterTacheDialog(
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                         )
-                    }
-                    DropdownMenu(
-                        expanded = expandedPriority,
-                        onDismissRequest = { expandedPriority = false }
-                    ) {
-                        priorityOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    priority = option
-                                    expandedPriority = false
-                                }
-                            )
-                        }
                     }
                     Spacer(modifier = Modifier.height(32.dp))
 
