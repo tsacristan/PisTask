@@ -32,12 +32,15 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.pistask.Priorite
-import com.example.pistask.Recurrence
-import com.example.pistask.Task
+import com.example.pistask.presentation.components.Priorite
+import com.example.pistask.presentation.components.Recurrence
+import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 import com.example.pistask.presentation.theme.Orange
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
 
 @Composable
 fun PrioritePill(priorite: Priorite, modifier: Modifier = Modifier) {
@@ -73,6 +76,14 @@ fun TaskCard(
     onCheckClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
 ) {
+    // Vérification date/heure dépassée
+    val isPast = try {
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val taskDate: Date? = sdf.parse(task.date)
+        val now = Date()
+        taskDate != null && taskDate.before(now)
+    } catch (e: Exception) { false }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -107,12 +118,22 @@ fun TaskCard(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = task.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
+                            )
+                            if (isPast && !task.isCompleted) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "En retard !",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = task.subtitle,

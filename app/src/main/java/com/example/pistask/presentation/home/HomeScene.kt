@@ -2,8 +2,11 @@ package com.example.pistask.presentation.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.material3.MaterialTheme
@@ -24,17 +30,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.pistask.R
-import com.example.pistask.Task
+import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.edit.ModifierTacheDialog
 import com.example.pistask.presentation.theme.BleuTurquoise
+import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
+
+// Enum représentant les filtres disponibles
+enum class FiltreEtat { TOUTES, A_FAIRE, COMPLETEES }
 
 @Composable
 fun HomeScene(
@@ -46,7 +58,16 @@ fun HomeScene(
 ) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
-    val sortedTasks = tasks.sortedBy { it.isCompleted }
+
+    // État du filtre sélectionné
+    var filtreSelectionne by remember { mutableStateOf(FiltreEtat.TOUTES) }
+
+    // Filtrage + tri
+    val filteredTasks = when (filtreSelectionne) {
+        FiltreEtat.TOUTES -> tasks.sortedBy { it.isCompleted }
+        FiltreEtat.A_FAIRE -> tasks.filter { !it.isCompleted }
+        FiltreEtat.COMPLETEES -> tasks.filter { it.isCompleted }
+    }
 
     val showEditDialog = remember { mutableStateOf(false) }
     val taskToEdit = remember { mutableStateOf<Task?>(null) }
@@ -123,17 +144,76 @@ fun HomeScene(
         Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── LISTE SCROLLABLE ──────────────────────────────────────────
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+        // ── CHIPS DE FILTRE ───────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(sortedTasks) { task ->
-                TaskCard(
-                    task = task,
-                    onCheckClick = { onTaskCheck(task) },
-                    onEditClick = { onEditRequest(task) }
+            listOf(
+                FiltreEtat.TOUTES to "Toutes",
+                FiltreEtat.A_FAIRE to "À faire",
+                FiltreEtat.COMPLETEES to "Complétées"
+            ).forEach { (filtre, label) ->
+                val selected = filtreSelectionne == filtre
+                FilterChip(
+                    selected = selected,
+                    onClick = { filtreSelectionne = filtre },
+                    label = { Text(text = label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = VertPistacheFoncee,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        borderColor = VertPistacheClair,
+                        selectedBorderColor = VertPistacheFoncee
+                    )
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ── LISTE SCROLLABLE ──────────────────────────────────────────
+        if (filteredTasks.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.pistache),
+                        contentDescription = "Aucune tâche",
+                        modifier = Modifier.size(72.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Pas une seule pistache à décortiquer...\nProfite du calme ou sème la prochaine !",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+                items(filteredTasks) { task ->
+                    TaskCard(task = task, onCheckClick = { onTaskCheck(task) })
+                }
             }
         }
     }
