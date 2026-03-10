@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.graphics.toColorInt
@@ -32,6 +33,7 @@ import com.example.pistask.presentation.theme.PisTaskTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -93,12 +95,6 @@ class MainActivity : ComponentActivity() {
                                     tasks = tasks.map {
                                         if (it.id == checkedTask.id) it.copy(isCompleted = !it.isCompleted) else it
                                     }.sortedBy { it.isCompleted }
-                                },
-                                onTaskEdit = { updatedTask ->
-                                    tasks = tasks.map {
-                                        if (it.id == updatedTask.id) updatedTask else it
-                                    }.sortedBy { it.isCompleted }
-                                    showEditDialog = false
                                 },
                                 onEditRequest = { task ->
                                     taskToEdit = task
