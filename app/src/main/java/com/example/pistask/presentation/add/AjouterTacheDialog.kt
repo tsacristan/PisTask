@@ -38,6 +38,14 @@ fun AjouterTacheDialog(
     var expandedPriority by remember { mutableStateOf(false) }
     val priorityOptions = listOf("Basse", "Moyenne", "Haute")
 
+    // Déclenchement de la validation (seulement après une tentative d'envoi)
+    var tentativeEnvoi by remember { mutableStateOf(false) }
+
+    val formulaireValide = title.trim().isNotEmpty() && date.trim().isNotEmpty()
+
+    val erreurTitre = tentativeEnvoi && title.trim().isEmpty()
+    val erreurDate = tentativeEnvoi && date.trim().isEmpty()
+
     AnimatedVisibility(
         visible = show,
         enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(durationMillis = 300)),
@@ -85,8 +93,17 @@ fun AjouterTacheDialog(
                         onValueChange = { title = it },
                         label = { Text("Titre...") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        isError = erreurTitre
                     )
+                    if (erreurTitre) {
+                        Text(
+                            text = "Un titre est nécessaire",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = description,
@@ -109,10 +126,19 @@ fun AjouterTacheDialog(
                                 label = { Text("13/02/2026") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
+                                isError = erreurDate,
                                 trailingIcon = {
                                     Icon(Icons.Default.DateRange, contentDescription = "Date")
                                 }
                             )
+                            if (erreurDate) {
+                                Text(
+                                    text = "Une date est nécessaire",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -175,14 +201,27 @@ fun AjouterTacheDialog(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { onSave(title.trim(), description.trim(), date.trim(), recurrence.trim(), priority.trim()) },
+                        onClick = {
+                            if (formulaireValide) {
+                                onSave(title.trim(), description.trim(), date.trim(), recurrence.trim(), priority.trim())
+                            } else {
+                                tentativeEnvoi = true
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
+                            containerColor = if (formulaireValide)
+                                MaterialTheme.colorScheme.secondary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            contentColor = if (formulaireValide)
+                                Color.White
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     ) {
-                        Text("+ AJOUTER AU GESTIONNAIRE", color = Color.White)
+                        Text("+ AJOUTER AU GESTIONNAIRE")
                     }
                 }
             }
