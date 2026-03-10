@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pistask.Priorite
@@ -68,6 +71,7 @@ fun TaskCard(
     task: Task,
     modifier: Modifier = Modifier,
     onCheckClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
 ) {
     Surface(
         modifier = modifier
@@ -118,7 +122,13 @@ fun TaskCard(
                         )
                     }
                 }
-                PrioritePill(priorite = task.priorite)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PrioritePill(priorite = task.priorite)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onEditClick) {
+                        Icon(Icons.Default.Edit, contentDescription = "Modifier la tâche")
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
