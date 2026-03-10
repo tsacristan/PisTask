@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.example.pistask.R
 import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
+import com.example.pistask.presentation.edit.ModifierTacheDialog
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
@@ -48,7 +49,13 @@ import com.example.pistask.presentation.theme.VertPistacheFoncee
 enum class FiltreEtat { TOUTES, A_FAIRE, COMPLETEES }
 
 @Composable
-fun HomeScene(tasks: List<Task>, modifier: Modifier = Modifier, onTaskCheck: (Task) -> Unit) {
+fun HomeScene(
+    tasks: List<Task>,
+    modifier: Modifier = Modifier,
+    onTaskCheck: (Task) -> Unit,
+    onTaskEdit: (Task) -> Unit,
+    onEditRequest: (Task) -> Unit
+) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
 
@@ -61,6 +68,9 @@ fun HomeScene(tasks: List<Task>, modifier: Modifier = Modifier, onTaskCheck: (Ta
         FiltreEtat.A_FAIRE -> tasks.filter { !it.isCompleted }
         FiltreEtat.COMPLETEES -> tasks.filter { it.isCompleted }
     }
+
+    val showEditDialog = remember { mutableStateOf(false) }
+    val taskToEdit = remember { mutableStateOf<Task?>(null) }
 
     Column(
         modifier = Modifier
