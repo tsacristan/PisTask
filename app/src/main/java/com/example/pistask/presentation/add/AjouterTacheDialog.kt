@@ -1,6 +1,7 @@
 package com.example.pistask.presentation.add
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,15 +30,22 @@ import java.util.Calendar
 fun AjouterTacheDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String) -> Unit
+    onSave: (String, String, String, String, String) -> Unit,
+    initialTitle: String = "",
+    initialDescription: String = "",
+    initialDate: String = "",
+    initialRecurrence: String = "Quotidien",
+    initialPriority: String = "Moyenne",
+    dialogTitle: String = "NOUVELLE TÂCHE",
+    buttonText: String = "+ AJOUTER AU GESTIONNAIRE"
 ) {
     val context = LocalContext.current
 
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var recurrence by remember { mutableStateOf("") }
-    var priority by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(initialTitle) }
+    var description by remember { mutableStateOf(initialDescription) }
+    var date by remember { mutableStateOf(initialDate) }
+    var recurrence by remember { mutableStateOf(initialRecurrence) }
+    var priority by remember { mutableStateOf(initialPriority) }
 
     var expandedRecurrence by remember { mutableStateOf(false) }
     val recurrenceOptions = listOf("Quotidien", "Hebdomadaire", "Mensuel", "Trimestriel", "Annuel")
@@ -68,6 +77,35 @@ fun AjouterTacheDialog(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
+    var hour by remember { mutableStateOf(0) }
+    var minute by remember { mutableStateOf(0) }
+    var time by remember { mutableStateOf("") }
+
+    // Ajout du TimePickerDialog natif
+    val timePickerDialog = TimePickerDialog(
+        context,
+        { _, selectedHour, selectedMinute ->
+            hour = selectedHour
+            minute = selectedMinute
+            time = "%02d:%02d".format(hour, minute)
+            date = if (date.isNotEmpty()) date else "%02d/%02d/%04d".format(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR))
+        },
+        hour,
+        minute,
+        true
+    )
+
+    // Combine date et heure
+    val dateTime = if (date.isNotEmpty() && time.isNotEmpty()) "${date} ${time}" else date
+
+    // Vérification date/heure dépassée
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm")
+    val now = Calendar.getInstance().time
+    val isPast = try {
+        val dt = sdf.parse(dateTime)
+        dt != null && dt.before(now)
+    } catch (e: Exception) { false }
+
     AnimatedVisibility(
         visible = show,
         enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(durationMillis = 300)),
@@ -96,7 +134,7 @@ fun AjouterTacheDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "NOUVELLE TÂCHE",
+                            text = dialogTitle,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -157,21 +195,37 @@ fun AjouterTacheDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
                                 readOnly = true,
-                                isError = erreurDate,
+                                isError = erreurDate || isPast,
                                 trailingIcon = {
-                                    IconButton(onClick = { datePickerDialog.show() }) {
-                                        Icon(
-                                            Icons.Default.DateRange,
-                                            contentDescription = "Choisir une date",
-                                            tint = if (erreurDate) MaterialTheme.colorScheme.error
-                                            else MaterialTheme.colorScheme.primary
-                                        )
+                                    Row {
+                                        IconButton(onClick = { datePickerDialog.show() }) {
+                                            Icon(
+                                                Icons.Default.DateRange,
+                                                contentDescription = "Choisir une date",
+                                                tint = if (erreurDate || isPast) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        IconButton(onClick = { timePickerDialog.show() }) {
+                                            Icon(
+                                                Icons.Default.DateRange,
+                                                contentDescription = "Choisir une heure",
+                                                tint = if (isPast) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                     }
                                 }
                             )
                             if (erreurDate) {
                                 Text(
                                     text = "Une date est nécessaire",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                                )
+                            }
+                            if (isPast && date.isNotEmpty() && time.isNotEmpty()) {
+                                Text(
+                                    text = "Date/heure butoir dépassée !",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -282,7 +336,7 @@ fun AjouterTacheDialog(
                                 onSave(
                                     title.trim(),
                                     description.trim(),
-                                    date.trim(),
+                                    if (date.isNotEmpty() && time.isNotEmpty()) "${date.trim()} ${time.trim()}" else date.trim(),
                                     recurrence.trim(),
                                     priority.trim()
                                 )
@@ -305,7 +359,7 @@ fun AjouterTacheDialog(
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     ) {
-                        Text("+ AJOUTER AU GESTIONNAIRE")
+                        Text(buttonText)
                     }
                 }
             }

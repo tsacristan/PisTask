@@ -1,4 +1,4 @@
-package com.example.pistask
+package com.example.pistask.presentation.components
 
 // Priorité
 enum class Priorite { BASSE, MOYENNE, HAUTE }

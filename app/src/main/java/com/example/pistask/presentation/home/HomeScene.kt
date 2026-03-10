@@ -38,7 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.pistask.R
-import com.example.pistask.Task
+import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertPistacheClair
