@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.pistask"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.pistask"
@@ -32,6 +30,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
+    }
     buildFeatures {
         compose = true
     }
@@ -41,6 +44,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
     // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.6.0")
     implementation(platform(libs.androidx.compose.bom))
