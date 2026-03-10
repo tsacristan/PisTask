@@ -94,12 +94,6 @@ class MainActivity : ComponentActivity() {
                                         if (it.id == checkedTask.id) it.copy(isCompleted = !it.isCompleted) else it
                                     }.sortedBy { it.isCompleted }
                                 },
-                                onTaskEdit = { updatedTask ->
-                                    tasks = tasks.map {
-                                        if (it.id == updatedTask.id) updatedTask else it
-                                    }.sortedBy { it.isCompleted }
-                                    showEditDialog = false
-                                },
                                 onEditRequest = { task ->
                                     taskToEdit = task
                                     showEditDialog = true
