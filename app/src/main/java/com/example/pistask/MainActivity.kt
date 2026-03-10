@@ -24,6 +24,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.pistask.presentation.components.Priorite
+import com.example.pistask.presentation.components.Recurrence
+import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 
@@ -140,8 +143,24 @@ class MainActivity : ComponentActivity() {
 fun HomePreview() {
     PisTaskTheme {
         HomeScene(tasks = listOf(
-            Task(1, "Exemple 1", "Description 1", Recurrence.QUOTIDIEN, "2026-03-09", Priorite.HAUTE, 10),
-            Task(2, "Exemple 2", "Description 2", Recurrence.HEBDOMADAIRE, "2026-03-10", Priorite.BASSE, 10)
+            Task(
+                1,
+                "Exemple 1",
+                "Description 1",
+                Recurrence.QUOTIDIEN,
+                "2026-03-09",
+                Priorite.HAUTE,
+                10
+            ),
+            Task(
+                2,
+                "Exemple 2",
+                "Description 2",
+                Recurrence.HEBDOMADAIRE,
+                "2026-03-10",
+                Priorite.BASSE,
+                10
+            )
         ), onTaskCheck = {})
     }
 }
