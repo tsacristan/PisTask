@@ -212,7 +212,11 @@ fun HomeScene(
                 contentPadding = PaddingValues(bottom = 100.dp)
             ) {
                 items(filteredTasks) { task ->
-                    TaskCard(task = task, onCheckClick = { onTaskCheck(task) })
+                    TaskCard(
+                        task = task,
+                        onCheckClick = { onTaskCheck(task) },
+                        onEditClick = { onEditRequest(task) }
+                    )
                 }
             }
         }
