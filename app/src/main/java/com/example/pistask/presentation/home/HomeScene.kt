@@ -49,9 +49,13 @@ import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertKaki
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
+import com.example.pistask.presentation.theme.Orange
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Enum représentant les filtres disponibles
-enum class FiltreEtat { TOUTES, A_FAIRE, COMPLETEES }
+enum class FiltreEtat { TOUTES, A_FAIRE, EN_RETARD, REALISEE }
 
 @Composable
 fun HomeScene(
@@ -66,11 +70,22 @@ fun HomeScene(
     // État du filtre sélectionné
     var filtreSelectionne by remember { mutableStateOf(FiltreEtat.TOUTES) }
 
+    // Helper : détermine si une tâche est en retard (date dépassée ET non complétée)
+    fun isEnRetard(task: Task): Boolean {
+        if (task.isCompleted) return false
+        return try {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val taskDate = sdf.parse(task.date)
+            taskDate != null && taskDate.before(Date())
+        } catch (e: Exception) { false }
+    }
+
     // Filtrage + tri
     val filteredTasks = when (filtreSelectionne) {
-        FiltreEtat.TOUTES -> tasks.sortedBy { it.isCompleted }
-        FiltreEtat.A_FAIRE -> tasks.filter { !it.isCompleted }
-        FiltreEtat.COMPLETEES -> tasks.filter { it.isCompleted }
+        FiltreEtat.TOUTES    -> tasks.sortedWith(compareBy({ it.isCompleted }, { !isEnRetard(it) }))
+        FiltreEtat.A_FAIRE   -> tasks.filter { !it.isCompleted && !isEnRetard(it) }
+        FiltreEtat.EN_RETARD -> tasks.filter { isEnRetard(it) }
+        FiltreEtat.REALISEE  -> tasks.filter { it.isCompleted }
     }
 
     // Référence aux vues Android custom
@@ -186,38 +201,39 @@ fun HomeScene(
             Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ── CHIPS DE FILTRE ───────────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    FiltreEtat.TOUTES to "Toutes",
-                    FiltreEtat.A_FAIRE to "À faire",
-                    FiltreEtat.COMPLETEES to "Complétées"
-                ).forEach { (filtre, label) ->
-                    val selected = filtreSelectionne == filtre
-                    FilterChip(
+        // ── CHIPS DE FILTRE ───────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                Triple(FiltreEtat.TOUTES,    "Toutes",     VertPistacheClair),
+                Triple(FiltreEtat.A_FAIRE,   "À faire",    VertPistacheFoncee),
+                Triple(FiltreEtat.EN_RETARD, "En retard",  Orange),
+                Triple(FiltreEtat.REALISEE,  "Réalisée",   BleuTurquoise)
+            ).forEach { (filtre, label, couleur) ->
+                val selected = filtreSelectionne == filtre
+                FilterChip(
+                    selected = selected,
+                    onClick = { filtreSelectionne = filtre },
+                    label = { Text(text = label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = couleur,
+                        selectedLabelColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
                         selected = selected,
-                        onClick = { filtreSelectionne = filtre },
-                        label = { Text(text = label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = VertPistacheFoncee,
-                            selectedLabelColor = Color.White,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = selected,
-                            borderColor = VertPistacheClair,
-                            selectedBorderColor = VertPistacheFoncee
-                        )
+                        borderColor = couleur.copy(alpha = 0.4f),
+                        selectedBorderColor = couleur
                     )
-                }
+                )
             }
+        }
 
             Spacer(modifier = Modifier.height(8.dp))
 
