@@ -333,10 +333,18 @@ fun AjouterTacheDialog(
                     Button(
                         onClick = {
                             if (formulaireValide) {
+                                val dateFinale = if (date.isNotEmpty() && time.isNotEmpty()) {
+                                    "${date.trim()} ${time.trim()}"
+                                } else if (date.isNotEmpty() && !date.contains(":")) {
+                                    // Si l'heure n'est pas présente, ajouter minuit
+                                    "${date.trim()} 00:00"
+                                } else {
+                                    date.trim()
+                                }
                                 onSave(
                                     title.trim(),
                                     description.trim(),
-                                    if (date.isNotEmpty() && time.isNotEmpty()) "${date.trim()} ${time.trim()}" else date.trim(),
+                                    dateFinale,
                                     recurrence.trim(),
                                     priority.trim()
                                 )
