@@ -162,30 +162,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun HomePreview() {
-    PisTaskTheme {
-        HomeScene(tasks = listOf(
-            Task(
-                1,
-                "Exemple 1",
-                "Description 1",
-                Recurrence.QUOTIDIEN,
-                "2026-03-09",
-                Priorite.HAUTE,
-                10
-            ),
-            Task(
-                2,
-                "Exemple 2",
-                "Description 2",
-                Recurrence.HEBDOMADAIRE,
-                "2026-03-10",
-                Priorite.BASSE,
-                10
-            )
-        ), onTaskCheck = {})
-    }
-}
