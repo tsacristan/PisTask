@@ -32,14 +32,24 @@ import androidx.compose.ui.unit.dp
 import com.example.pistask.R
 import com.example.pistask.Task
 import com.example.pistask.presentation.components.TaskCard
+import com.example.pistask.presentation.edit.ModifierTacheDialog
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 
 @Composable
-fun HomeScene(tasks: List<Task>, modifier: Modifier = Modifier, onTaskCheck: (Task) -> Unit) {
+fun HomeScene(
+    tasks: List<Task>,
+    modifier: Modifier = Modifier,
+    onTaskCheck: (Task) -> Unit,
+    onTaskEdit: (Task) -> Unit,
+    onEditRequest: (Task) -> Unit
+) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
     val sortedTasks = tasks.sortedBy { it.isCompleted }
+
+    val showEditDialog = remember { mutableStateOf(false) }
+    val taskToEdit = remember { mutableStateOf<Task?>(null) }
 
     Column(
         modifier = Modifier
@@ -119,7 +129,11 @@ fun HomeScene(tasks: List<Task>, modifier: Modifier = Modifier, onTaskCheck: (Ta
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
         ) {
             items(sortedTasks) { task ->
-                TaskCard(task = task, onCheckClick = { onTaskCheck(task) })
+                TaskCard(
+                    task = task,
+                    onCheckClick = { onTaskCheck(task) },
+                    onEditClick = { onEditRequest(task) }
+                )
             }
         }
     }

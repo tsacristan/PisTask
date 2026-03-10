@@ -25,13 +25,20 @@ import androidx.compose.ui.unit.sp
 fun AjouterTacheDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String) -> Unit
+    onSave: (String, String, String, String, String) -> Unit,
+    initialTitle: String = "",
+    initialDescription: String = "",
+    initialDate: String = "",
+    initialRecurrence: String = "Quotidien",
+    initialPriority: String = "Moyenne",
+    dialogTitle: String = "NOUVELLE TÂCHE",
+    buttonText: String = "+ AJOUTER AU GESTIONNAIRE"
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var recurrence by remember { mutableStateOf("Quotidien") }
-    var priority by remember { mutableStateOf("Moyenne") }
+    var title by remember { mutableStateOf(initialTitle) }
+    var description by remember { mutableStateOf(initialDescription) }
+    var date by remember { mutableStateOf(initialDate) }
+    var recurrence by remember { mutableStateOf(initialRecurrence) }
+    var priority by remember { mutableStateOf(initialPriority) }
 
     var expandedRecurrence by remember { mutableStateOf(false) }
     val recurrenceOptions = listOf("Quotidien", "Hebdomadaire", "Mensuel", "Trimestriel", "Annuel")
@@ -69,7 +76,7 @@ fun AjouterTacheDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "NOUVELLE TÂCHE",
+                            text = dialogTitle,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -182,7 +189,7 @@ fun AjouterTacheDialog(
                             containerColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
-                        Text("+ AJOUTER AU GESTIONNAIRE", color = Color.White)
+                        Text(buttonText, color = Color.White)
                     }
                 }
             }

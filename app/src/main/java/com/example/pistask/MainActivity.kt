@@ -52,6 +52,8 @@ class MainActivity : ComponentActivity() {
 
                 var showAddDialog by remember { mutableStateOf(false) }
                 var tasks by remember { mutableStateOf(listOf<Task>()) }
+                var showEditDialog by remember { mutableStateOf(false) }
+                var taskToEdit by remember { mutableStateOf<Task?>(null) }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -88,6 +90,16 @@ class MainActivity : ComponentActivity() {
                                     tasks = tasks.map {
                                         if (it.id == checkedTask.id) it.copy(isCompleted = !it.isCompleted) else it
                                     }.sortedBy { it.isCompleted }
+                                },
+                                onTaskEdit = { updatedTask ->
+                                    tasks = tasks.map {
+                                        if (it.id == updatedTask.id) updatedTask else it
+                                    }.sortedBy { it.isCompleted }
+                                    showEditDialog = false
+                                },
+                                onEditRequest = { task ->
+                                    taskToEdit = task
+                                    showEditDialog = true
                                 }
                             )
                         }
@@ -130,6 +142,19 @@ class MainActivity : ComponentActivity() {
                         showAddDialog = false
                     }
                 )
+                if (showEditDialog && taskToEdit != null) {
+                    com.example.pistask.presentation.edit.ModifierTacheDialog(
+                        show = showEditDialog,
+                        task = taskToEdit!!,
+                        onDismiss = { showEditDialog = false },
+                        onSave = { updatedTask ->
+                            tasks = tasks.map {
+                                if (it.id == updatedTask.id) updatedTask else it
+                            }.sortedBy { it.isCompleted }
+                            showEditDialog = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -142,6 +167,6 @@ fun HomePreview() {
         HomeScene(tasks = listOf(
             Task(1, "Exemple 1", "Description 1", Recurrence.QUOTIDIEN, "2026-03-09", Priorite.HAUTE, 10),
             Task(2, "Exemple 2", "Description 2", Recurrence.HEBDOMADAIRE, "2026-03-10", Priorite.BASSE, 10)
-        ), onTaskCheck = {})
+        ), onTaskCheck = {}, onTaskEdit = {}, onEditRequest = {})
     }
 }
