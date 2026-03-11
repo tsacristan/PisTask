@@ -98,11 +98,11 @@ fun HomeScene(
 
     // Filtrage + tri
     val filteredTasks = when (filtreSelectionne) {
-        FiltreEtat.TOUTES    -> tasks.filter { doitSafficher(it) }
-                                     .sortedWith(compareBy({ it.isCompleted }, { !isEnRetard(it) }))
-        FiltreEtat.A_FAIRE   -> tasks.filter { !it.isCompleted && !isEnRetard(it) && tacheEstVisible(it) }
-        FiltreEtat.EN_RETARD -> tasks.filter { isEnRetard(it) }
-        FiltreEtat.REALISEE  -> tasks.filter { it.isCompleted }
+        FiltreEtat.TOUTES -> tasks.filter { doitSafficher(it) }
+                                  .sortedWith(compareBy<Task> { it.isCompleted }.thenByDescending { it.priorite })
+        FiltreEtat.A_FAIRE -> tasks.filter { !it.isCompleted && !isEnRetard(it) && tacheEstVisible(it) }.sortedByDescending { it.priorite }
+        FiltreEtat.EN_RETARD -> tasks.filter { isEnRetard(it) }.sortedByDescending { it.priorite }
+        FiltreEtat.REALISEE -> tasks.filter { it.isCompleted }.sortedByDescending { it.priorite }
     }
 
     // Référence aux vues Android custom
