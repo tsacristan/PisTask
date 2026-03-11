@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
                 com.example.pistask.presentation.add.AjouterTacheDialog(
                     show = showAddDialog,
                     onDismiss = { showAddDialog = false },
-                    onSave = { title, subtitle, date, recurrence, priorite ->
+                    onSave = { title, subtitle, date, recurrence, priorite, imageUri ->
                         try {
                             val newTask = Task(
                                 id = tasks.size + 1,
@@ -162,11 +162,11 @@ class MainActivity : ComponentActivity() {
                                 recurrence = Recurrence.valueOf(recurrence.uppercase()),
                                 date = date,
                                 priorite = Priorite.valueOf(priorite.uppercase()),
-                                points = 10
+                                points = 10,
+                                imageUri = imageUri
                             )
                             tasks = tasks + newTask
                         } catch (e: Exception) {
-                            // Fallback or log error for invalid enum values
                             val newTask = Task(
                                 id = tasks.size + 1,
                                 title = title,
@@ -174,7 +174,8 @@ class MainActivity : ComponentActivity() {
                                 recurrence = Recurrence.QUOTIDIEN,
                                 date = date,
                                 priorite = Priorite.MOYENNE,
-                                points = 10
+                                points = 10,
+                                imageUri = imageUri
                             )
                             tasks = tasks + newTask
                         }
