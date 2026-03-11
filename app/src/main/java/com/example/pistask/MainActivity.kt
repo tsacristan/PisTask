@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.rememberNavController
@@ -79,6 +80,20 @@ class MainActivity : ComponentActivity() {
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
                 var totalPoints by remember { mutableIntStateOf(0) }
+                var dailyPoints by remember { mutableIntStateOf(0) }
+                var bonusMultiplier by remember { mutableStateOf(1.0) }
+                // Reset des points quotidiens à chaque nouveau jour
+                var lastResetDay by remember { mutableStateOf(
+                    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                ) }
+                LaunchedEffect(Unit) {
+                    val today = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                    if (today != lastResetDay) {
+                        dailyPoints = 0
+                        bonusMultiplier = 1.0
+                        lastResetDay = today
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -108,10 +123,12 @@ class MainActivity : ComponentActivity() {
                             HomeScene(
                                 tasks = tasks,
                                 totalPoints = totalPoints,
+                                dailyPoints = dailyPoints,
                                 onTaskCheck = { checkedTask ->
                                     if (!checkedTask.isCompleted) {
-                                        // Gagner les points
-                                        totalPoints += pointsPourTache(checkedTask)
+                                        val earned = (pointsPourTache(checkedTask) * bonusMultiplier).toInt()
+                                        totalPoints += earned
+                                        dailyPoints += earned
 
                                         val nextDate = if (recurrenceGenereProchaine(checkedTask.recurrence))
                                             prochaineDateRecurrence(checkedTask.date, checkedTask.recurrence)
@@ -124,8 +141,9 @@ class MainActivity : ComponentActivity() {
                                             ) else task
                                         }.sortedBy { it.isCompleted }
                                     } else {
-                                        // Perdre les points si on décoche
-                                        totalPoints = maxOf(0, totalPoints - pointsPourTache(checkedTask))
+                                        val lost = (pointsPourTache(checkedTask) * bonusMultiplier).toInt()
+                                        totalPoints = maxOf(0, totalPoints - lost)
+                                        dailyPoints = maxOf(0, dailyPoints - lost)
 
                                         tasks = tasks.map { task ->
                                             if (task.id == checkedTask.id) task.copy(
@@ -134,6 +152,10 @@ class MainActivity : ComponentActivity() {
                                             ) else task
                                         }.sortedBy { it.isCompleted }
                                     }
+                                },
+                                onWateringCanFull = {
+                                    // Bonus ×1.5 actif jusqu'à la fin de la journée
+                                    bonusMultiplier = 1.5
                                 },
                                 onEditRequest = { task ->
                                     taskToEdit = task

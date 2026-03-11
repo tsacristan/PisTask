@@ -68,10 +68,12 @@ fun HomeScene(
     tasks: List<Task>,
     modifier: Modifier = Modifier,
     totalPoints: Int = 0,
+    dailyPoints: Int = 0,
     onTaskCheck: (Task) -> Unit,
     onEditRequest: (Task) -> Unit,
     onAutoReset: (List<Task>) -> Unit = {},
-    onTaskDelete: (Task) -> Unit = {}
+    onTaskDelete: (Task) -> Unit = {},
+    onWateringCanFull: () -> Unit = {}
 ) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
@@ -142,8 +144,28 @@ fun HomeScene(
     val canX = remember { mutableStateOf(0f) }
     val canY = remember { mutableStateOf(0f) }
 
-    // Niveau d'eau = ratio complétées / total (0-100)
-    val waterTarget = if (totalCount > 0) (completedCount * 100) / totalCount else 0
+    // Niveau d'eau = pts du jour / 50 (se remplit par tranche de 50 pts)
+    val pointsDansTranche = dailyPoints % 50
+    val waterTarget = (pointsDansTranche * 100) / 50  // 0→100 dans la tranche courante
+    val arrosoirsRemplis = dailyPoints / 50
+
+    // Déclencher le bonus quand l'arrosoir est rempli (changement de tranche)
+    LaunchedEffect(arrosoirsRemplis) {
+        if (arrosoirsRemplis > 0) onWateringCanFull()
+    }
+
+    // Message explicite selon progression du jour
+    val messageGestionnaire = when {
+        dailyPoints == 0           -> "Lance-toi, la première pistache t'attend !"
+        pointsDansTranche < 20     -> "Bon départ ! Continue comme ça 💪"
+        pointsDansTranche < 40     -> "Presque à mi-chemin, encore un effort !"
+        pointsDansTranche < 50     -> "Plus que quelques points pour remplir l'arrosoir !"
+        else                       -> "Arrosoir plein ! Bonus ×1.5 débloqué 🎉"
+    }
+    val sousTitre = if (arrosoirsRemplis > 0)
+        "$arrosoirsRemplis arrosoir${if (arrosoirsRemplis > 1) "s" else ""} rempli${if (arrosoirsRemplis > 1) "s" else ""} aujourd'hui · $pointsDansTranche/50 pts"
+    else
+        "$pointsDansTranche / 50 pts aujourd'hui"
 
     // Variables d'état pour la suppression de tâche
     var taskToDelete by remember { mutableStateOf<Task?>(null) }
@@ -239,11 +261,22 @@ fun HomeScene(
 
                     // Texte résumé
                     Column {
-                        Text(text = "GESTIONNAIRE DE TÂCHES", color = Color.White)
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "$completedCount / $totalCount complétés",
-                            color = Color.White
+                            text = "GESTIONNAIRE DE TÂCHES",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = messageGestionnaire,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = sousTitre,
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.labelSmall
                         )
                     }
                 }
