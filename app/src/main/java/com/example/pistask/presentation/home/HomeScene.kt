@@ -67,6 +67,7 @@ enum class FiltreEtat { TOUTES, A_FAIRE, EN_RETARD, REALISEE }
 fun HomeScene(
     tasks: List<Task>,
     modifier: Modifier = Modifier,
+    totalPoints: Int = 0,
     onTaskCheck: (Task) -> Unit,
     onEditRequest: (Task) -> Unit,
     onAutoReset: (List<Task>) -> Unit = {},
@@ -176,12 +177,16 @@ fun HomeScene(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.droplets),
-                            contentDescription = "Eau",
+                            contentDescription = "Points",
                             modifier = Modifier.size(28.dp),
                             colorFilter = ColorFilter.tint(BleuTurquoise)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = "150", color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = "$totalPoints",
+                            color = BleuTurquoise,
+                            style = MaterialTheme.typography.titleLarge
+                        )
                     }
                 }
 
