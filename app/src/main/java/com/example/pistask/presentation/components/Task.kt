@@ -12,7 +12,8 @@ data class Task(
     val title: String,
     val subtitle: String,
     val recurrence: Recurrence,
-    val date: String,
+    val date: String,           // date d'échéance affichée
+    val nextDate: String = "",  // prochaine occurrence (après validation)
     val priorite: Priorite,
     val points: Int,
     val isCompleted: Boolean = false

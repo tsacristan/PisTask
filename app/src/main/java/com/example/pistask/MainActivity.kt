@@ -30,6 +30,10 @@ import com.example.pistask.presentation.components.Recurrence
 import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.prochaineDateRecurrence
 import com.example.pistask.presentation.components.recurrenceGenereProchaine
+import com.example.pistask.presentation.components.datePrecedente
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 
@@ -61,6 +65,7 @@ class MainActivity : ComponentActivity() {
                 var tasks by remember { mutableStateOf(listOf<Task>()) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
+                val scope = rememberCoroutineScope()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -94,31 +99,43 @@ class MainActivity : ComponentActivity() {
                             HomeScene(
                                 tasks = tasks,
                                 onTaskCheck = { checkedTask ->
-                                    tasks = if (!checkedTask.isCompleted) {
-                                        tasks.map { task ->
-                                            if (task.id == checkedTask.id) {
-                                                if (recurrenceGenereProchaine(task.recurrence)) {
-                                                    // Récurrente : avancer la date + remettre à faire
-                                                    task.copy(
-                                                        isCompleted = false,
-                                                        date = prochaineDateRecurrence(task.date, task.recurrence)
-                                                    )
-                                                } else {
-                                                    // Unique : juste compléter
-                                                    task.copy(isCompleted = true)
-                                                }
-                                            } else task
+                                    if (!checkedTask.isCompleted) {
+                                        // Cocher : garder la date d'échéance, stocker la prochaine dans nextDate
+                                        val nextDate = if (recurrenceGenereProchaine(checkedTask.recurrence))
+                                            prochaineDateRecurrence(checkedTask.date, checkedTask.recurrence)
+                                        else ""
+
+                                        tasks = tasks.map { task ->
+                                            if (task.id == checkedTask.id) task.copy(
+                                                isCompleted = true,
+                                                nextDate = nextDate
+                                                // date reste inchangée
+                                            ) else task
                                         }.sortedBy { it.isCompleted }
                                     } else {
-                                        // Décocher → remettre non complétée
-                                        tasks.map { task ->
-                                            if (task.id == checkedTask.id) task.copy(isCompleted = false) else task
+                                        // Décocher : remettre non complétée, effacer nextDate
+                                        tasks = tasks.map { task ->
+                                            if (task.id == checkedTask.id) task.copy(
+                                                isCompleted = false,
+                                                nextDate = ""
+                                            ) else task
                                         }.sortedBy { it.isCompleted }
                                     }
                                 },
                                 onEditRequest = { task ->
                                     taskToEdit = task
                                     showEditDialog = true
+                                },
+                                onAutoReset = { tasksToReset ->
+                                    tasks = tasks.map { task ->
+                                        if (tasksToReset.any { it.id == task.id })
+                                            task.copy(
+                                                isCompleted = false,
+                                                date = if (task.nextDate.isNotEmpty()) task.nextDate else task.date,
+                                                nextDate = ""
+                                            )
+                                        else task
+                                    }.sortedBy { it.isCompleted }
                                 },
                                 onTaskDelete = { task ->
                                     tasks = tasks.filter { it.id != task.id }

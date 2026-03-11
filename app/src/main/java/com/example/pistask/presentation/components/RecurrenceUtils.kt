@@ -11,6 +11,29 @@ import java.util.Locale
  */
 fun recurrenceGenereProchaine(rec: Recurrence): Boolean = rec != Recurrence.UNIQUE
 
+/** Revient d'un cycle en arrière (pour annuler un check). */
+fun datePrecedente(dateActuelle: String, recurrence: Recurrence): String {
+    if (recurrence == Recurrence.UNIQUE) return dateActuelle
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    return try {
+        val cal = Calendar.getInstance()
+        val parsed = sdf.parse(dateActuelle)
+        if (parsed != null) cal.time = parsed
+        when (recurrence) {
+            Recurrence.UNIQUE       -> { }
+            Recurrence.QUOTIDIEN    -> cal.add(Calendar.DAY_OF_YEAR, -1)
+            Recurrence.HEBDOMADAIRE -> cal.add(Calendar.WEEK_OF_YEAR, -1)
+            Recurrence.MENSUEL      -> cal.add(Calendar.MONTH, -1)
+            Recurrence.TRIMESTRIEL  -> cal.add(Calendar.MONTH, -3)
+            Recurrence.SEMESTRIEL   -> cal.add(Calendar.MONTH, -6)
+            Recurrence.ANNUEL       -> cal.add(Calendar.YEAR, -1)
+        }
+        sdf.format(cal.time)
+    } catch (_: Exception) {
+        dateActuelle
+    }
+}
+
 fun prochaineDateRecurrence(dateActuelle: String, recurrence: Recurrence): String {
     if (recurrence == Recurrence.UNIQUE) return dateActuelle
     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())

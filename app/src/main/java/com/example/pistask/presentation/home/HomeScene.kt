@@ -47,6 +47,9 @@ import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.components.WateringCanView
 import com.example.pistask.presentation.components.WaterFlowView
+import androidx.compose.runtime.LaunchedEffect
+import com.example.pistask.presentation.components.dateApparition
+import com.example.pistask.presentation.components.recurrenceGenereProchaine
 import com.example.pistask.presentation.components.tacheEstVisible
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertKaki
@@ -66,7 +69,8 @@ fun HomeScene(
     modifier: Modifier = Modifier,
     onTaskCheck: (Task) -> Unit,
     onEditRequest: (Task) -> Unit,
-    onTaskDelete: (Task) -> Unit
+    onAutoReset: (List<Task>) -> Unit = {},
+    onTaskDelete: (Task) -> Unit = {}
 ) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
@@ -89,20 +93,44 @@ fun HomeScene(
         } catch (e: Exception) { false }
     }
 
-    // Une tâche doit s'afficher si :
-    // - elle est complétée (filtre réalisée)
-    // - elle est en retard (toujours visible)
-    // - sa date d'apparition est atteinte (tacheEstVisible)
-    fun doitSafficher(task: Task): Boolean =
-        task.isCompleted || isEnRetard(task) || tacheEstVisible(task)
+    fun doitSafficher(task: Task): Boolean {
+        if (task.isCompleted) return true  // toujours visible dans "Réalisée" / "Toutes"
+        return isEnRetard(task) || tacheEstVisible(task)
+    }
+
+    LaunchedEffect(tasks) {
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val todayStr = sdf.format(Date())
+        val toReset = tasks.filter { task ->
+            task.isCompleted &&
+            recurrenceGenereProchaine(task.recurrence) &&
+            task.nextDate.isNotEmpty() &&
+            run {
+                // Reset quand l'apparition de nextDate est atteinte ET pas le jour même du check
+                val apparitionStr = sdf.format(dateApparition(task.nextDate, task.recurrence))
+                val nextTask = task.copy(date = task.nextDate)
+                tacheEstVisible(nextTask) && apparitionStr != todayStr
+            }
+        }
+        if (toReset.isNotEmpty()) {
+            onAutoReset(toReset)
+        }
+    }
 
     // Filtrage + tri
     val filteredTasks = when (filtreSelectionne) {
         FiltreEtat.TOUTES -> tasks.filter { doitSafficher(it) }
-                                  .sortedWith(compareBy<Task> { it.isCompleted }.thenByDescending { it.priorite })
-        FiltreEtat.A_FAIRE -> tasks.filter { !it.isCompleted && !isEnRetard(it) && tacheEstVisible(it) }.sortedByDescending { it.priorite }
+            .sortedWith(compareBy(
+                // 0 = en retard, 1 = à faire, 2 = réalisée
+                { task -> when {
+                    isEnRetard(task)   -> 0
+                    !task.isCompleted  -> 1
+                    else               -> 2
+                }}
+            ))
+        FiltreEtat.A_FAIRE   -> tasks.filter { !it.isCompleted && !isEnRetard(it) && tacheEstVisible(it) }.sortedByDescending { it.priorite }
         FiltreEtat.EN_RETARD -> tasks.filter { isEnRetard(it) }.sortedByDescending { it.priorite }
-        FiltreEtat.REALISEE -> tasks.filter { it.isCompleted }.sortedByDescending { it.priorite }
+        FiltreEtat.REALISEE  -> tasks.filter { it.isCompleted }.sortedByDescending { it.priorite }
     }
 
     // Référence aux vues Android custom
