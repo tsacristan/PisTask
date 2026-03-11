@@ -4,7 +4,7 @@ package com.example.pistask.presentation.components
 enum class Priorite { BASSE, MOYENNE, HAUTE }
 
 // Récurrence (FR)
-enum class Recurrence { QUOTIDIEN, HEBDOMADAIRE, MENSUEL, TRIMESTRIEL, SEMESTRIEL, ANNUEL }
+enum class Recurrence { UNIQUE, QUOTIDIEN, HEBDOMADAIRE, MENSUEL, TRIMESTRIEL, SEMESTRIEL, ANNUEL }
 
 // Modèle de données Task
 data class Task(
