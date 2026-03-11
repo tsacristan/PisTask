@@ -38,7 +38,13 @@ import com.example.pistask.presentation.components.Recurrence
 import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
+import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.Orange
+import com.example.pistask.presentation.theme.VertKaki
+import com.example.pistask.R
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Date
@@ -96,12 +102,13 @@ fun TaskCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .border(2.dp, VertKaki.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -165,14 +172,15 @@ fun TaskCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // séparation grise entre le contenu principal et la ligne metadata
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -221,11 +229,44 @@ fun TaskCard(
                     }
                 }
 
-                Text(
-                    text = "+${task.points} pts",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VertPistacheFoncee
-                )
+                // Points : toujours BleuTurquoise
+                val basePoints = when (task.priorite) {
+                    Priorite.BASSE   -> 5
+                    Priorite.MOYENNE -> 10
+                    Priorite.HAUTE   -> 20
+                }
+                val multi = when (task.recurrence) {
+                    Recurrence.UNIQUE       -> 1.0
+                    Recurrence.QUOTIDIEN    -> 1.0
+                    Recurrence.HEBDOMADAIRE -> 1.5
+                    Recurrence.MENSUEL      -> 2.0
+                    Recurrence.TRIMESTRIEL  -> 2.5
+                    Recurrence.SEMESTRIEL   -> 3.0
+                    Recurrence.ANNUEL       -> 4.0
+                }
+                val pts = (basePoints * multi).toInt()
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = BleuTurquoise.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.droplets),
+                            contentDescription = "Points",
+                            modifier = Modifier.size(14.dp),
+                            colorFilter = ColorFilter.tint(BleuTurquoise)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "+$pts",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = BleuTurquoise
+                        )
+                    }
+                }
             }
         }
     }
