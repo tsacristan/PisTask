@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pistask.presentation.components.Priorite
@@ -75,6 +76,7 @@ fun TaskCard(
     modifier: Modifier = Modifier,
     onCheckClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}, // Ajout du paramètre pour la suppression
 ) {
     // Vérification date/heure dépassée
     val isPast = try {
@@ -148,6 +150,10 @@ fun TaskCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = onEditClick) {
                         Icon(Icons.Default.Edit, contentDescription = "Modifier la tâche")
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(Icons.Default.Delete, contentDescription = "Supprimer la tâche", tint = Color.Red)
                     }
                 }
             }

@@ -99,6 +99,9 @@ class MainActivity : ComponentActivity() {
                                 onEditRequest = { task ->
                                     taskToEdit = task
                                     showEditDialog = true
+                                },
+                                onTaskDelete = { task ->
+                                    tasks = tasks.filter { it.id != task.id }
                                 }
                             )
                         }

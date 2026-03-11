@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.ui.graphics.Color
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.pistask.R
+import com.example.pistask.presentation.components.DeleteTaskDialog
 import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.components.WateringCanView
@@ -58,7 +60,8 @@ fun HomeScene(
     tasks: List<Task>,
     modifier: Modifier = Modifier,
     onTaskCheck: (Task) -> Unit,
-    onEditRequest: (Task) -> Unit
+    onEditRequest: (Task) -> Unit,
+    onTaskDelete: (Task) -> Unit
 ) {
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
@@ -83,6 +86,10 @@ fun HomeScene(
 
     // Niveau d'eau = ratio complétées / total (0-100)
     val waterTarget = if (totalCount > 0) (completedCount * 100) / totalCount else 0
+
+    // Variables d'état pour la suppression de tâche
+    var taskToDelete by remember { mutableStateOf<Task?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -279,7 +286,11 @@ fun HomeScene(
                                     }
                                     onTaskCheck(task)
                                 },
-                                onEditClick = { onEditRequest(task) }
+                                onEditClick = { onEditRequest(task) },
+                                onDeleteClick = {
+                                    taskToDelete = task
+                                    showDeleteDialog = true
+                                }
                             )
                         }
                     }
@@ -295,4 +306,19 @@ fun HomeScene(
             modifier = Modifier.fillMaxSize()
         )
     }
+
+    // Confirmation de suppression
+    DeleteTaskDialog(
+        show = showDeleteDialog,
+        task = taskToDelete,
+        onConfirm = {
+            onTaskDelete(taskToDelete!!)
+            showDeleteDialog = false
+            taskToDelete = null
+        },
+        onDismiss = {
+            showDeleteDialog = false
+            taskToDelete = null
+        }
+    )
 }
