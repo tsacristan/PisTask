@@ -47,6 +47,7 @@ import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.TaskCard
 import com.example.pistask.presentation.components.WateringCanView
 import com.example.pistask.presentation.components.WaterFlowView
+import com.example.pistask.presentation.components.tacheEstVisible
 import com.example.pistask.presentation.theme.BleuTurquoise
 import com.example.pistask.presentation.theme.VertKaki
 import com.example.pistask.presentation.theme.VertPistacheClair
@@ -73,20 +74,33 @@ fun HomeScene(
     // État du filtre sélectionné
     var filtreSelectionne by remember { mutableStateOf(FiltreEtat.TOUTES) }
 
-    // Helper : détermine si une tâche est en retard (date dépassée ET non complétée)
+    // Helper : tâche en retard = deadline 23h59 du jour J dépassée ET non complétée
     fun isEnRetard(task: Task): Boolean {
         if (task.isCompleted) return false
         return try {
             val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val taskDate = sdf.parse(task.date)
-            taskDate != null && taskDate.before(Date())
+            val taskDate = sdf.parse(task.date) ?: return false
+            val cal = java.util.Calendar.getInstance()
+            cal.time = taskDate
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+            cal.set(java.util.Calendar.MINUTE, 59)
+            cal.set(java.util.Calendar.SECOND, 59)
+            cal.time.before(Date())
         } catch (e: Exception) { false }
     }
 
+    // Une tâche doit s'afficher si :
+    // - elle est complétée (filtre réalisée)
+    // - elle est en retard (toujours visible)
+    // - sa date d'apparition est atteinte (tacheEstVisible)
+    fun doitSafficher(task: Task): Boolean =
+        task.isCompleted || isEnRetard(task) || tacheEstVisible(task)
+
     // Filtrage + tri
     val filteredTasks = when (filtreSelectionne) {
-        FiltreEtat.TOUTES    -> tasks.sortedWith(compareBy({ it.isCompleted }, { !isEnRetard(it) }))
-        FiltreEtat.A_FAIRE   -> tasks.filter { !it.isCompleted && !isEnRetard(it) }
+        FiltreEtat.TOUTES    -> tasks.filter { doitSafficher(it) }
+                                     .sortedWith(compareBy({ it.isCompleted }, { !isEnRetard(it) }))
+        FiltreEtat.A_FAIRE   -> tasks.filter { !it.isCompleted && !isEnRetard(it) && tacheEstVisible(it) }
         FiltreEtat.EN_RETARD -> tasks.filter { isEnRetard(it) }
         FiltreEtat.REALISEE  -> tasks.filter { it.isCompleted }
     }
