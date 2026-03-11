@@ -76,12 +76,19 @@ fun TaskCard(
     onCheckClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
 ) {
-    // Vérification date/heure dépassée
+    // Vérification date dépassée : la tâche est en retard seulement après 23h59 le jour J
     val isPast = try {
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val taskDate: Date? = sdf.parse(task.date)
-        val now = Date()
-        taskDate != null && taskDate.before(now)
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        sdf.isLenient = false
+        val taskDate = sdf.parse(task.date)
+        if (taskDate != null) {
+            val cal = java.util.Calendar.getInstance()
+            cal.time = taskDate
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+            cal.set(java.util.Calendar.MINUTE, 59)
+            cal.set(java.util.Calendar.SECOND, 59)
+            cal.time.before(Date())
+        } else false
     } catch (e: Exception) { false }
 
     Surface(
@@ -168,12 +175,13 @@ fun TaskCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val recurrenceLabel = when (task.recurrence) {
-                        Recurrence.QUOTIDIEN -> "QUOTIDIEN"
+                        Recurrence.UNIQUE       -> "UNIQUE"
+                        Recurrence.QUOTIDIEN    -> "QUOTIDIEN"
                         Recurrence.HEBDOMADAIRE -> "HEBDOMADAIRE"
-                        Recurrence.MENSUEL -> "MENSUEL"
-                        Recurrence.TRIMESTRIEL -> "TRIMESTRIEL"
-                        Recurrence.SEMESTRIEL -> "SEMESTRIEL"
-                        Recurrence.ANNUEL -> "ANNUEL"
+                        Recurrence.MENSUEL      -> "MENSUEL"
+                        Recurrence.TRIMESTRIEL  -> "TRIMESTRIEL"
+                        Recurrence.SEMESTRIEL   -> "SEMESTRIEL"
+                        Recurrence.ANNUEL       -> "ANNUEL"
                     }
 
                     // Capsule récurrence

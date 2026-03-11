@@ -48,7 +48,7 @@ fun AjouterTacheDialog(
     var priority by remember { mutableStateOf(initialPriority) }
 
     var expandedRecurrence by remember { mutableStateOf(false) }
-    val recurrenceOptions = listOf("Quotidien", "Hebdomadaire", "Mensuel", "Trimestriel", "Annuel")
+    val recurrenceOptions = listOf("Unique", "Quotidien", "Hebdomadaire", "Mensuel", "Trimestriel", "Annuel")
     var expandedPriority by remember { mutableStateOf(false) }
     val priorityOptions = listOf("Basse", "Moyenne", "Haute")
 

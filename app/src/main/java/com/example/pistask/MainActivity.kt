@@ -28,6 +28,8 @@ import androidx.navigation.compose.composable
 import com.example.pistask.presentation.components.Priorite
 import com.example.pistask.presentation.components.Recurrence
 import com.example.pistask.presentation.components.Task
+import com.example.pistask.presentation.components.prochaineDateRecurrence
+import com.example.pistask.presentation.components.recurrenceGenereProchaine
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 
@@ -92,9 +94,27 @@ class MainActivity : ComponentActivity() {
                             HomeScene(
                                 tasks = tasks,
                                 onTaskCheck = { checkedTask ->
-                                    tasks = tasks.map {
-                                        if (it.id == checkedTask.id) it.copy(isCompleted = !it.isCompleted) else it
-                                    }.sortedBy { it.isCompleted }
+                                    tasks = if (!checkedTask.isCompleted) {
+                                        tasks.map { task ->
+                                            if (task.id == checkedTask.id) {
+                                                if (recurrenceGenereProchaine(task.recurrence)) {
+                                                    // Récurrente : avancer la date + remettre à faire
+                                                    task.copy(
+                                                        isCompleted = false,
+                                                        date = prochaineDateRecurrence(task.date, task.recurrence)
+                                                    )
+                                                } else {
+                                                    // Unique : juste compléter
+                                                    task.copy(isCompleted = true)
+                                                }
+                                            } else task
+                                        }.sortedBy { it.isCompleted }
+                                    } else {
+                                        // Décocher → remettre non complétée
+                                        tasks.map { task ->
+                                            if (task.id == checkedTask.id) task.copy(isCompleted = false) else task
+                                        }.sortedBy { it.isCompleted }
+                                    }
                                 },
                                 onEditRequest = { task ->
                                     taskToEdit = task
