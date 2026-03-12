@@ -45,6 +45,7 @@ import kotlinx.coroutines.launch
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 import com.example.pistask.util.NotificationHelper
+import com.example.pistask.util.StorageHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -94,13 +95,15 @@ class MainActivity : ComponentActivity() {
                 )
 
                 var showAddDialog by remember { mutableStateOf(false) }
-                var tasks by remember { mutableStateOf(listOf<Task>()) }
+                var tasks by remember { mutableStateOf(StorageHelper.loadTasks(context)) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
                 val scope = rememberCoroutineScope()
 
-                // Logic to trigger notifications when tasks change
+                // Save tasks whenever they change
                 LaunchedEffect(tasks) {
+                    StorageHelper.saveTasks(context, tasks)
+                    
                     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                     val today = Date()
                     val todayStr = sdf.format(today)
@@ -216,7 +219,7 @@ class MainActivity : ComponentActivity() {
                     onSave = { title, subtitle, date, recurrence, priorite, imageUri ->
                         try {
                             val newTask = Task(
-                                id = tasks.size + 1,
+                                id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
                                 subtitle = subtitle,
                                 recurrence = Recurrence.valueOf(recurrence.uppercase()),
@@ -228,7 +231,7 @@ class MainActivity : ComponentActivity() {
                             tasks = tasks + newTask
                         } catch (e: Exception) {
                             val newTask = Task(
-                                id = tasks.size + 1,
+                                id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
                                 subtitle = subtitle,
                                 recurrence = Recurrence.QUOTIDIEN,
