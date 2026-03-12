@@ -1,9 +1,15 @@
 package com.example.pistask
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -14,12 +20,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -36,12 +44,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
+import com.example.pistask.util.NotificationHelper
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        NotificationHelper.createNotificationChannel(this)
 
         // edge-to-edge config and set system navigation bar color to match the app nav bar
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -52,6 +66,24 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PisTaskTheme {
+                val context = LocalContext.current
+                
+                // Permission request for notifications (Android 13+)
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = { isGranted ->
+                        // Handle result if needed
+                    }
+                )
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
+
                 // Utilise un Scaffold racine : on met la nav bar dans bottomBar pour éviter les doublons
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -66,6 +98,34 @@ class MainActivity : ComponentActivity() {
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
                 val scope = rememberCoroutineScope()
+
+                // Logic to trigger notifications when tasks change
+                LaunchedEffect(tasks) {
+                    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val today = Date()
+                    val todayStr = sdf.format(today)
+
+                    tasks.forEach { task ->
+                        if (!task.isCompleted) {
+                            try {
+                                val taskDate = sdf.parse(task.date)
+                                if (taskDate != null) {
+                                    val cal = java.util.Calendar.getInstance()
+                                    cal.time = taskDate
+                                    cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                                    cal.set(java.util.Calendar.MINUTE, 59)
+                                    cal.set(java.util.Calendar.SECOND, 59)
+                                    
+                                    if (cal.time.before(today)) {
+                                        NotificationHelper.showLateNotification(context, task.title)
+                                    } else if (task.date == todayStr) {
+                                        NotificationHelper.showUpcomingDeadlineNotification(context, task.title)
+                                    }
+                                }
+                            } catch (e: Exception) { }
+                        }
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
