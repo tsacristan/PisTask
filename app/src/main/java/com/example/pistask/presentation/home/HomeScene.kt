@@ -227,7 +227,12 @@ fun HomeScene(
                         modifier = Modifier.size(56.dp),
                         contentScale = ContentScale.Crop
                     )
-                    Text(text = "Pïstask", color = VertPistacheFoncee, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Pistask",
+                        color = VertPistacheFoncee,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 0.dp)
+                    )
                 }
             }
 
