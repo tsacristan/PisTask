@@ -25,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -77,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
         NotificationHelper.createNotificationChannel(this)
 
-        // edge-to-edge config and set system navigation bar color to match the app nav bar
+        // Configuration plein écran et couleur de la barre de navigation système pour correspondre à l'app
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = "#1C1C14".toColorInt()
         window.statusBarColor = "#1C1C14".toColorInt()
@@ -88,11 +87,11 @@ class MainActivity : ComponentActivity() {
             PisTaskTheme {
                 val context = LocalContext.current
                 
-                // Permission request for notifications (Android 13+)
+                // Demande de permission pour les notifications (Android 13+)
                 val launcher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { isGranted ->
-                        // Handle result if needed
+                        // Gérer le résultat si nécessaire
                     }
                 )
 
@@ -171,6 +170,11 @@ class MainActivity : ComponentActivity() {
                             } catch (e: Exception) { }
                         }
                     }
+                }
+
+                // Sauvegarder les points dès qu'ils changent
+                LaunchedEffect(totalPoints) {
+                    StorageHelper.savePoints(context, totalPoints)
                 }
 
                 Scaffold(
@@ -257,7 +261,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(com.example.pistask.presentation.navigation.Screen.Jardin.route) {
-                            JardinScene()
+                            JardinScene(
+                                initialPoints = totalPoints,
+                                onPointsChanged = { newPoints ->
+                                    totalPoints = newPoints
+                                }
+                            )
                         }
                     }
                 }

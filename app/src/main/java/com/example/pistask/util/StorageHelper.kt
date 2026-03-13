@@ -13,6 +13,7 @@ object StorageHelper {
     private const val DAILY_POINTS_KEY = "daily_points"
     private const val LAST_RESET_DAY_KEY = "last_reset_day"
     private const val BONUS_MULTIPLIER_KEY = "bonus_multiplier"
+    private const val GROWTH_KEY = "plant_growth"
     private val gson = Gson()
 
     private fun getPrefs(context: Context): SharedPreferences =
@@ -56,4 +57,11 @@ object StorageHelper {
 
     fun loadBonusMultiplier(context: Context): Double =
         getPrefs(context).getFloat(BONUS_MULTIPLIER_KEY, 1.0f).toDouble()
+    fun saveGrowth(context: Context, growth: Float) {
+        getPrefs(context).edit().putFloat(GROWTH_KEY, growth).apply()
+    }
+
+    fun loadGrowth(context: Context): Float {
+        return getPrefs(context).getFloat(GROWTH_KEY, 0f)
+    }
 }
