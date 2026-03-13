@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.ui.graphics.Color
@@ -75,9 +74,6 @@ fun HomeScene(
     onTaskDelete: (Task) -> Unit = {},
     onWateringCanFull: () -> Unit = {}
 ) {
-    val completedCount = tasks.count { it.isCompleted }
-    val totalCount = tasks.size
-
     // État du filtre sélectionné
     var filtreSelectionne by remember { mutableStateOf(FiltreEtat.TOUTES) }
 
@@ -93,7 +89,7 @@ fun HomeScene(
             cal.set(java.util.Calendar.MINUTE, 59)
             cal.set(java.util.Calendar.SECOND, 59)
             cal.time.before(Date())
-        } catch (e: Exception) { false }
+        } catch (_: Exception) { false }
     }
 
     fun doitSafficher(task: Task): Boolean {
@@ -154,18 +150,30 @@ fun HomeScene(
         if (arrosoirsRemplis > 0) onWateringCanFull()
     }
 
-    // Message explicite selon progression du jour
+    // Message explicite selon progression du jour et nombre de seaux remplis
     val messageGestionnaire = when {
-        dailyPoints == 0           -> "Lance-toi, la première pistache t'attend !"
-        pointsDansTranche < 20     -> "Bon départ ! Continue comme ça 💪"
-        pointsDansTranche < 40     -> "Presque à mi-chemin, encore un effort !"
-        pointsDansTranche < 50     -> "Plus que quelques points pour remplir l'arrosoir !"
-        else                       -> "Arrosoir plein ! Bonus ×1.5 débloqué 🎉"
+        arrosoirsRemplis == 0 && dailyPoints == 0 -> "Objectif du jour : remplir ton premier seau !"
+        arrosoirsRemplis == 0 && pointsDansTranche < 20 -> "Le premier seau se remplit... continue d'arroser 🌱"
+        arrosoirsRemplis == 0 && pointsDansTranche < 40 -> "Beau départ ! Ton premier seau prend forme"
+        arrosoirsRemplis == 0 -> "Plus beaucoup avant le 1er seau et le bonus multiplicateur +0,1"
+
+        arrosoirsRemplis == 1 && pointsDansTranche == 0 -> "1 seau rempli ! Ton bonus multiplicateur cumulé passe à +0,1"
+        arrosoirsRemplis == 1 && pointsDansTranche < 25 -> "Deuxième seau en vue... garde le rythme 💧"
+        arrosoirsRemplis == 1 -> "Encore un effort pour décrocher un bonus multiplicateur +0,2"
+
+        arrosoirsRemplis == 2 && pointsDansTranche == 0 -> "2 seaux remplis ! Le bonus multiplicateur monte à +0,2"
+        arrosoirsRemplis == 2 && pointsDansTranche < 25 -> "Le troisième seau se prépare tranquillement"
+        arrosoirsRemplis == 2 -> "Plus que quelques gouttes pour atteindre un bonus multiplicateur +0,3"
+
+        pointsDansTranche == 0 -> "$arrosoirsRemplis seaux remplis ! Le bonus multiplicateur grimpe à +${String.format(Locale.US, "%.1f", arrosoirsRemplis * 0.1)}"
+        pointsDansTranche < 25 -> "$arrosoirsRemplis seaux sécurisés, le prochain bonus multiplicateur arrive"
+        else -> "Encore une petite pis'tâche pour passer à un bonus multiplicateur +${String.format(Locale.US, "%.1f", (arrosoirsRemplis + 1) * 0.1)}"
     }
+
     val sousTitre = if (arrosoirsRemplis > 0)
-        "$arrosoirsRemplis arrosoir${if (arrosoirsRemplis > 1) "s" else ""} rempli${if (arrosoirsRemplis > 1) "s" else ""} aujourd'hui · $pointsDansTranche/50 pts"
+        "$arrosoirsRemplis seau${if (arrosoirsRemplis > 1) "x" else ""} rempli${if (arrosoirsRemplis > 1) "s" else ""} · bonus multiplicateur cumulé +${String.format(Locale.US, "%.1f", arrosoirsRemplis * 0.1)} · $pointsDansTranche/50 pts vers le suivant"
     else
-        "$pointsDansTranche / 50 pts aujourd'hui"
+        "$pointsDansTranche / 50 pts pour remplir le premier seau · chaque seau ajoute +0,1 au bonus multiplicateur"
 
     // Variables d'état pour la suppression de tâche
     var taskToDelete by remember { mutableStateOf<Task?>(null) }
@@ -262,7 +270,7 @@ fun HomeScene(
                     // Texte résumé
                     Column {
                         Text(
-                            text = "GESTIONNAIRE DE TÂCHES",
+                            text = "CHASSE AUX SEAUX",
                             color = Color.White,
                             style = MaterialTheme.typography.labelMedium
                         )
@@ -285,7 +293,7 @@ fun HomeScene(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Titre "Vos tâches"
-            Text(text = "Vos tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+            Text(text = "Vos pis'tâches", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(8.dp))
 
         // ── CHIPS DE FILTRE ───────────────────────────────────────────
@@ -357,8 +365,7 @@ fun HomeScene(
                     contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     items(filteredTasks) { task ->
-                        // Capte la position du centre de la checkbox
-                        var checkboxCenter = remember { mutableStateOf(Pair(0f, 0f)) }
+                        val checkboxCenter = remember { mutableStateOf(Pair(0f, 0f)) }
                         Box(
                             modifier = Modifier.onGloballyPositioned { coords ->
                                 val pos = coords.positionInWindow()
