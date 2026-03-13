@@ -117,21 +117,31 @@ class MainActivity : ComponentActivity() {
                 var tasks by remember { mutableStateOf(StorageHelper.loadTasks(context)) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
-                var totalPoints by remember { mutableIntStateOf(0) }
-                var dailyPoints by remember { mutableIntStateOf(0) }
-                var bonusMultiplier by remember { mutableStateOf(1.0) }
+                var totalPoints by remember { mutableIntStateOf(StorageHelper.loadTotalPoints(context)) }
+                var dailyPoints by remember { mutableIntStateOf(StorageHelper.loadDailyPoints(context)) }
+                var bonusMultiplier by remember { mutableStateOf(StorageHelper.loadBonusMultiplier(context)) }
                 // Reset des points quotidiens à chaque nouveau jour
-                var lastResetDay by remember { mutableStateOf(
+                var lastResetDay by remember { mutableStateOf(StorageHelper.loadLastResetDay(context).ifEmpty {
                     java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
-                ) }
+                }) }
+
                 LaunchedEffect(Unit) {
                     val today = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
                     if (today != lastResetDay) {
                         dailyPoints = 0
                         bonusMultiplier = 1.0
                         lastResetDay = today
+                        StorageHelper.saveDailyPoints(context, 0)
+                        StorageHelper.saveBonusMultiplier(context, 1.0)
+                        StorageHelper.saveLastResetDay(context, today)
                     }
                 }
+
+                // Sauvegarde des points dès qu'ils changent
+                LaunchedEffect(totalPoints) { StorageHelper.saveTotalPoints(context, totalPoints) }
+                LaunchedEffect(dailyPoints) { StorageHelper.saveDailyPoints(context, dailyPoints) }
+                LaunchedEffect(bonusMultiplier) { StorageHelper.saveBonusMultiplier(context, bonusMultiplier) }
+                LaunchedEffect(lastResetDay) { StorageHelper.saveLastResetDay(context, lastResetDay) }
 
                 // Save tasks whenever they change
                 LaunchedEffect(tasks) {
