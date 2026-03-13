@@ -10,7 +10,7 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 /**
- * Vue overlay qui anime des particules (eau + pistaches) en trajectoire de Bézier
+ * Vue overlay qui anime des particules d'eau bleues
  * depuis la checkbox cochée jusqu'à l'arrosoir.
  */
 class WaterFlowView @JvmOverloads constructor(
@@ -26,22 +26,25 @@ class WaterFlowView @JvmOverloads constructor(
     private val particles = mutableListOf<FlowParticle>()
     private val drawPaint = Paint(Paint.ANTI_ALIAS_FLAG) // prealloué hors onDraw
 
-    private val waterColors = intArrayOf(0xFF3B82F6.toInt(), 0xFF60A5FA.toInt(), 0xFF93C5FD.toInt())
-    private val pistachioColors = intArrayOf(0xFF93C572.toInt(), 0xFFD4E09B.toInt(), 0xFF6B9E3D.toInt())
+    private val waterColors = intArrayOf(
+        0xFF2563EB.toInt(),
+        0xFF3B82F6.toInt(),
+        0xFF60A5FA.toInt(),
+        0xFF93C5FD.toInt(),
+        0xFF0EA5E9.toInt()
+    )
 
     fun startFlow(startX: Float, startY: Float, endX: Float, endY: Float) {
         val count = 18
         val burst = mutableListOf<FlowParticle>()
 
         repeat(count) {
-            val isPistachio = Random.nextFloat() > 0.65f
             burst.add(
                 FlowParticle(
                     startX = startX,
                     startY = startY,
                     endX = endX,
                     endY = endY,
-                    type = if (isPistachio) ParticleType.PISTACHIO else ParticleType.WATER,
                     curve = (Random.nextFloat() - 0.5f) * 320f,
                     size = Random.nextFloat() * 9f + 5f,
                     delay = Random.nextFloat() * 0.25f   // décalage léger entre particules
@@ -81,22 +84,16 @@ class WaterFlowView @JvmOverloads constructor(
             val x = invT.pow(2) * p.startX + 2f * invT * t * cpX + t.pow(2) * p.endX
             val y = invT.pow(2) * p.startY + 2f * invT * t * cpY + t.pow(2) * p.endY
 
-            drawPaint.color = when (p.type) {
-                ParticleType.WATER -> waterColors[Random.nextInt(waterColors.size)]
-                ParticleType.PISTACHIO -> pistachioColors[Random.nextInt(pistachioColors.size)]
-            }
+            drawPaint.color = waterColors[Random.nextInt(waterColors.size)]
             drawPaint.alpha = ((1f - t.pow(2)) * 230).toInt()
 
             canvas.drawCircle(x, y, p.size, drawPaint)
         }
     }
 
-    enum class ParticleType { WATER, PISTACHIO }
-
     private data class FlowParticle(
         val startX: Float, val startY: Float,
         val endX: Float, val endY: Float,
-        val type: ParticleType,
         val curve: Float,
         val size: Float,
         val delay: Float,

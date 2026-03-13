@@ -17,14 +17,15 @@ import androidx.core.graphics.toColorInt
 import com.example.pistask.presentation.jardin.JardinScene
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,10 +39,6 @@ import com.example.pistask.presentation.components.Recurrence
 import com.example.pistask.presentation.components.Task
 import com.example.pistask.presentation.components.prochaineDateRecurrence
 import com.example.pistask.presentation.components.recurrenceGenereProchaine
-import com.example.pistask.presentation.components.datePrecedente
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
 import com.example.pistask.util.NotificationHelper
@@ -49,6 +46,27 @@ import com.example.pistask.util.StorageHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// Points de base par priorité
+fun pointsBase(priorite: Priorite): Int = when (priorite) {
+    Priorite.BASSE  -> 5
+    Priorite.MOYENNE -> 10
+    Priorite.HAUTE  -> 20
+}
+
+// Multiplicateur par récurrence (plus rare = plus de points)
+fun multiplicateurRecurrence(recurrence: Recurrence): Double = when (recurrence) {
+    Recurrence.UNIQUE       -> 2.0
+    Recurrence.QUOTIDIEN    -> 1.0
+    Recurrence.HEBDOMADAIRE -> 1.5
+    Recurrence.MENSUEL      -> 2.0
+    Recurrence.TRIMESTRIEL  -> 2.5
+    Recurrence.SEMESTRIEL   -> 3.0
+    Recurrence.ANNUEL       -> 4.0
+}
+
+fun pointsPourTache(task: Task): Int =
+    (pointsBase(task.priorite) * multiplicateurRecurrence(task.recurrence)).toInt()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,8 +78,8 @@ class MainActivity : ComponentActivity() {
 
         // edge-to-edge config and set system navigation bar color to match the app nav bar
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = "#1C1C14".toColorInt() // même couleur que la nav bar
-        window.statusBarColor = "#1C1C14".toColorInt() // barre système du haut = même couleur
+        window.navigationBarColor = "#1C1C14".toColorInt()
+        window.statusBarColor = "#1C1C14".toColorInt()
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
@@ -98,7 +116,21 @@ class MainActivity : ComponentActivity() {
                 var tasks by remember { mutableStateOf(StorageHelper.loadTasks(context)) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
-                val scope = rememberCoroutineScope()
+                var totalPoints by remember { mutableIntStateOf(0) }
+                var dailyPoints by remember { mutableIntStateOf(0) }
+                var bonusMultiplier by remember { mutableStateOf(1.0) }
+                // Reset des points quotidiens à chaque nouveau jour
+                var lastResetDay by remember { mutableStateOf(
+                    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                ) }
+                LaunchedEffect(Unit) {
+                    val today = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+                    if (today != lastResetDay) {
+                        dailyPoints = 0
+                        bonusMultiplier = 1.0
+                        lastResetDay = today
+                    }
+                }
 
                 // Save tasks whenever they change
                 LaunchedEffect(tasks) {
@@ -138,9 +170,7 @@ class MainActivity : ComponentActivity() {
                             currentRoute = currentRoute,
                             onItemClick = { route: String ->
                                 if (route != currentRoute) {
-                                    navController.navigate(route) {
-                                        launchSingleTop = true
-                                    }
+                                    navController.navigate(route) { launchSingleTop = true }
                                 }
                             },
                             centerButtonSizeDp = 130,
@@ -151,8 +181,6 @@ class MainActivity : ComponentActivity() {
                     },
                     containerColor = Color.Transparent
                 ) { innerPadding ->
-                    // NavHost: routes pour la bottom navigation
-                    // Padding top via WindowInsets (status bar), la nav bar est en overlay
                     NavHost(
                         navController = navController,
                         startDestination = com.example.pistask.presentation.navigation.Screen.Tache.route,
@@ -161,9 +189,14 @@ class MainActivity : ComponentActivity() {
                         composable(com.example.pistask.presentation.navigation.Screen.Tache.route) {
                             HomeScene(
                                 tasks = tasks,
+                                totalPoints = totalPoints,
+                                dailyPoints = dailyPoints,
                                 onTaskCheck = { checkedTask ->
                                     if (!checkedTask.isCompleted) {
-                                        // Cocher : garder la date d'échéance, stocker la prochaine dans nextDate
+                                        val earned = (pointsPourTache(checkedTask) * bonusMultiplier).toInt()
+                                        totalPoints += earned
+                                        dailyPoints += earned
+
                                         val nextDate = if (recurrenceGenereProchaine(checkedTask.recurrence))
                                             prochaineDateRecurrence(checkedTask.date, checkedTask.recurrence)
                                         else ""
@@ -172,11 +205,13 @@ class MainActivity : ComponentActivity() {
                                             if (task.id == checkedTask.id) task.copy(
                                                 isCompleted = true,
                                                 nextDate = nextDate
-                                                // date reste inchangée
                                             ) else task
                                         }.sortedBy { it.isCompleted }
                                     } else {
-                                        // Décocher : remettre non complétée, effacer nextDate
+                                        val lost = (pointsPourTache(checkedTask) * bonusMultiplier).toInt()
+                                        totalPoints = maxOf(0, totalPoints - lost)
+                                        dailyPoints = maxOf(0, dailyPoints - lost)
+
                                         tasks = tasks.map { task ->
                                             if (task.id == checkedTask.id) task.copy(
                                                 isCompleted = false,
@@ -184,6 +219,10 @@ class MainActivity : ComponentActivity() {
                                             ) else task
                                         }.sortedBy { it.isCompleted }
                                     }
+                                },
+                                onWateringCanFull = {
+                                    // Bonus ×1.5 actif jusqu'à la fin de la journée
+                                    bonusMultiplier = 1.5
                                 },
                                 onEditRequest = { task ->
                                     taskToEdit = task
@@ -206,13 +245,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(com.example.pistask.presentation.navigation.Screen.Jardin.route) {
-                            // simple placeholder
                             JardinScene()
                         }
                     }
                 }
 
-                // Dialog d'ajout s'affiche en popup au-dessus de tout
                 com.example.pistask.presentation.add.AjouterTacheDialog(
                     show = showAddDialog,
                     onDismiss = { showAddDialog = false },
@@ -234,7 +271,7 @@ class MainActivity : ComponentActivity() {
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
                                 subtitle = subtitle,
-                                recurrence = Recurrence.QUOTIDIEN,
+                                recurrence = Recurrence.UNIQUE,
                                 date = date,
                                 priorite = Priorite.MOYENNE,
                                 points = 10,
