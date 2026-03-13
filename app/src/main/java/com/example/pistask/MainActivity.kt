@@ -1,9 +1,15 @@
 package com.example.pistask
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -12,6 +18,8 @@ import com.example.pistask.presentation.jardin.JardinScene
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -20,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
@@ -31,6 +41,11 @@ import com.example.pistask.presentation.components.prochaineDateRecurrence
 import com.example.pistask.presentation.components.recurrenceGenereProchaine
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
+import com.example.pistask.util.NotificationHelper
+import com.example.pistask.util.StorageHelper
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Points de base par priorité
 fun pointsBase(priorite: Priorite): Int = when (priorite) {
@@ -59,6 +74,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        NotificationHelper.createNotificationChannel(this)
+
+        // edge-to-edge config and set system navigation bar color to match the app nav bar
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = "#1C1C14".toColorInt()
         window.statusBarColor = "#1C1C14".toColorInt()
@@ -67,6 +85,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PisTaskTheme {
+                val context = LocalContext.current
+                
+                // Permission request for notifications (Android 13+)
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = { isGranted ->
+                        // Handle result if needed
+                    }
+                )
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
+
+                // Utilise un Scaffold racine : on met la nav bar dans bottomBar pour éviter les doublons
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
@@ -76,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 )
 
                 var showAddDialog by remember { mutableStateOf(false) }
-                var tasks by remember { mutableStateOf(listOf<Task>()) }
+                var tasks by remember { mutableStateOf(StorageHelper.loadTasks(context)) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
                 var totalPoints by remember { mutableIntStateOf(0) }
@@ -92,6 +129,36 @@ class MainActivity : ComponentActivity() {
                         dailyPoints = 0
                         bonusMultiplier = 1.0
                         lastResetDay = today
+                    }
+                }
+
+                // Save tasks whenever they change
+                LaunchedEffect(tasks) {
+                    StorageHelper.saveTasks(context, tasks)
+                    
+                    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val today = Date()
+                    val todayStr = sdf.format(today)
+
+                    tasks.forEach { task ->
+                        if (!task.isCompleted) {
+                            try {
+                                val taskDate = sdf.parse(task.date)
+                                if (taskDate != null) {
+                                    val cal = java.util.Calendar.getInstance()
+                                    cal.time = taskDate
+                                    cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                                    cal.set(java.util.Calendar.MINUTE, 59)
+                                    cal.set(java.util.Calendar.SECOND, 59)
+                                    
+                                    if (cal.time.before(today)) {
+                                        NotificationHelper.showLateNotification(context, task.title)
+                                    } else if (task.date == todayStr) {
+                                        NotificationHelper.showUpcomingDeadlineNotification(context, task.title)
+                                    }
+                                }
+                            } catch (e: Exception) { }
+                        }
                     }
                 }
 
@@ -186,7 +253,7 @@ class MainActivity : ComponentActivity() {
                 com.example.pistask.presentation.add.AjouterTacheDialog(
                     show = showAddDialog,
                     onDismiss = { showAddDialog = false },
-                    onSave = { title, subtitle, date, recurrence, priorite ->
+                    onSave = { title, subtitle, date, recurrence, priorite, imageUri ->
                         try {
                             val newTask = Task(
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
@@ -195,7 +262,8 @@ class MainActivity : ComponentActivity() {
                                 recurrence = Recurrence.valueOf(recurrence.uppercase()),
                                 date = date,
                                 priorite = Priorite.valueOf(priorite.uppercase()),
-                                points = 10
+                                points = 10,
+                                imageUri = imageUri
                             )
                             tasks = tasks + newTask
                         } catch (e: Exception) {
@@ -206,7 +274,8 @@ class MainActivity : ComponentActivity() {
                                 recurrence = Recurrence.UNIQUE,
                                 date = date,
                                 priorite = Priorite.MOYENNE,
-                                points = 10
+                                points = 10,
+                                imageUri = imageUri
                             )
                             tasks = tasks + newTask
                         }

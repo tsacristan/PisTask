@@ -35,13 +35,14 @@ fun ModifierTacheDialog(
     AjouterTacheDialog(
         show = show,
         onDismiss = onDismiss,
-        onSave = { title, description, date, recurrence, priority ->
+        onSave = { title, description, date, recurrence, priority, imageUri ->
             val updatedTask = task.copy(
                 title = title,
                 subtitle = description,
                 date = date,
                 recurrence = Recurrence.valueOf(recurrence.uppercase()),
-                priorite = Priorite.valueOf(priority.uppercase())
+                priorite = Priorite.valueOf(priority.uppercase()),
+                imageUri = imageUri
             )
             onSave(updatedTask)
         },
@@ -50,6 +51,7 @@ fun ModifierTacheDialog(
         initialDate = task.date,
         initialRecurrence = task.recurrence.name,
         initialPriority = task.priorite.name,
+        initialImageUri = task.imageUri,
         dialogTitle = "MODIFIER LA TÂCHE",
         buttonText = "MODIFIER LA TÂCHE"
     )

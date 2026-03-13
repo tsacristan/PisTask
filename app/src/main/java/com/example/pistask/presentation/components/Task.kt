@@ -16,5 +16,6 @@ data class Task(
     val nextDate: String = "",  // prochaine occurrence (après validation)
     val priorite: Priorite,
     val points: Int,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val imageUri: String? = null // Ajout du champ imageUri
 )

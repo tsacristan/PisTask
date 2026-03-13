@@ -2,10 +2,15 @@ package com.example.pistask.presentation.add
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,24 +27,37 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AjouterTacheDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String, String) -> Unit,
+    onSave: (String, String, String, String, String, String?) -> Unit,
     initialTitle: String = "",
     initialDescription: String = "",
     initialDate: String = "",
     initialRecurrence: String = "Quotidien",
     initialPriority: String = "Moyenne",
+    initialImageUri: String? = null,
     dialogTitle: String = "NOUVELLE TÂCHE",
     buttonText: String = "+ AJOUTER AU GESTIONNAIRE"
 ) {
     val context = LocalContext.current
+    var imageUri by remember { mutableStateOf(initialImageUri) }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        imageUri = uri?.toString()
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) {
+            val uri = MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, "TachePhoto", null)
+            imageUri = uri
+        }
+    }
 
     var title by remember { mutableStateOf(initialTitle) }
     var description by remember { mutableStateOf(initialDescription) }
@@ -177,6 +195,28 @@ fun AjouterTacheDialog(
                         minLines = 2,
                         maxLines = 3
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Ajout photo
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(onClick = { galleryLauncher.launch("image/*") }, modifier = Modifier.padding(end = 8.dp)) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Galerie")
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Galerie")
+                        }
+                        Button(onClick = { cameraLauncher.launch(null) }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Caméra")
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Caméra")
+                        }
+                    }
+                    if (imageUri != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = "Photo de la tâche",
+                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp))
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Date + Récurrence ────────────────────────────────────
@@ -346,7 +386,8 @@ fun AjouterTacheDialog(
                                     description.trim(),
                                     dateFinale,
                                     recurrence.trim(),
-                                    priority.trim()
+                                    priority.trim(),
+                                    imageUri
                                 )
                             } else {
                                 tentativeEnvoi = true
