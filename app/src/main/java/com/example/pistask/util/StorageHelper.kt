@@ -9,11 +9,14 @@ import com.google.gson.reflect.TypeToken
 object StorageHelper {
     private const val PREFS_NAME = "pistask_prefs"
     private const val TASKS_KEY = "tasks_list"
+    private const val TOTAL_POINTS_KEY = "total_points"
+    private const val DAILY_POINTS_KEY = "daily_points"
+    private const val LAST_RESET_DAY_KEY = "last_reset_day"
+    private const val BONUS_MULTIPLIER_KEY = "bonus_multiplier"
     private val gson = Gson()
 
-    private fun getPrefs(context: Context): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
+    private fun getPrefs(context: Context): SharedPreferences =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun saveTasks(context: Context, tasks: List<Task>) {
         val json = gson.toJson(tasks)
@@ -21,12 +24,36 @@ object StorageHelper {
     }
 
     fun loadTasks(context: Context): List<Task> {
-        val json = getPrefs(context).getString(TASKS_KEY, null)
-        return if (json == null) {
-            emptyList()
-        } else {
-            val type = object : TypeToken<List<Task>>() {}.type
-            gson.fromJson(json, type)
-        }
+        val json = getPrefs(context).getString(TASKS_KEY, null) ?: return emptyList()
+        val type = object : TypeToken<List<Task>>() {}.type
+        return gson.fromJson(json, type)
     }
+
+    fun saveTotalPoints(context: Context, points: Int) {
+        getPrefs(context).edit().putInt(TOTAL_POINTS_KEY, points).apply()
+    }
+
+    fun loadTotalPoints(context: Context): Int =
+        getPrefs(context).getInt(TOTAL_POINTS_KEY, 0)
+
+    fun saveDailyPoints(context: Context, points: Int) {
+        getPrefs(context).edit().putInt(DAILY_POINTS_KEY, points).apply()
+    }
+
+    fun loadDailyPoints(context: Context): Int =
+        getPrefs(context).getInt(DAILY_POINTS_KEY, 0)
+
+    fun saveLastResetDay(context: Context, day: String) {
+        getPrefs(context).edit().putString(LAST_RESET_DAY_KEY, day).apply()
+    }
+
+    fun loadLastResetDay(context: Context): String =
+        getPrefs(context).getString(LAST_RESET_DAY_KEY, "") ?: ""
+
+    fun saveBonusMultiplier(context: Context, bonus: Double) {
+        getPrefs(context).edit().putFloat(BONUS_MULTIPLIER_KEY, bonus.toFloat()).apply()
+    }
+
+    fun loadBonusMultiplier(context: Context): Double =
+        getPrefs(context).getFloat(BONUS_MULTIPLIER_KEY, 1.0f).toDouble()
 }

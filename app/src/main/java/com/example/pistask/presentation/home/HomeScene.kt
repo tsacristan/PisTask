@@ -220,18 +220,17 @@ fun HomeScene(
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(
-                        painter = painterResource(id = R.drawable.pistache),
-                        contentDescription = "Logo",
+                        painter = painterResource(id = R.drawable.pistask),
+                        contentDescription = "Logo Pistask",
                         modifier = Modifier.size(56.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                     Text(
                         text = "Pistask",
                         color = VertPistacheFoncee,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 0.dp)
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
