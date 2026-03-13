@@ -220,14 +220,18 @@ fun HomeScene(
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(
-                        painter = painterResource(id = R.drawable.pistache),
-                        contentDescription = "Logo",
+                        painter = painterResource(id = R.drawable.pistask),
+                        contentDescription = "Logo Pistask",
                         modifier = Modifier.size(56.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
-                    Text(text = "Pïstask", color = VertPistacheFoncee, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Pistask",
+                        color = VertPistacheFoncee,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 
@@ -362,7 +366,7 @@ fun HomeScene(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    contentPadding = PaddingValues(bottom = 180.dp)
                 ) {
                     items(filteredTasks) { task ->
                         val checkboxCenter = remember { mutableStateOf(Pair(0f, 0f)) }

@@ -41,6 +41,7 @@ import com.example.pistask.presentation.components.prochaineDateRecurrence
 import com.example.pistask.presentation.components.recurrenceGenereProchaine
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
+import com.example.pistask.util.ImageHelper
 import com.example.pistask.util.NotificationHelper
 import com.example.pistask.util.StorageHelper
 import java.text.SimpleDateFormat
@@ -116,21 +117,31 @@ class MainActivity : ComponentActivity() {
                 var tasks by remember { mutableStateOf(StorageHelper.loadTasks(context)) }
                 var showEditDialog by remember { mutableStateOf(false) }
                 var taskToEdit by remember { mutableStateOf<Task?>(null) }
-                var totalPoints by remember { mutableIntStateOf(0) }
-                var dailyPoints by remember { mutableIntStateOf(0) }
-                var bonusMultiplier by remember { mutableStateOf(1.0) }
+                var totalPoints by remember { mutableIntStateOf(StorageHelper.loadTotalPoints(context)) }
+                var dailyPoints by remember { mutableIntStateOf(StorageHelper.loadDailyPoints(context)) }
+                var bonusMultiplier by remember { mutableStateOf(StorageHelper.loadBonusMultiplier(context)) }
                 // Reset des points quotidiens à chaque nouveau jour
-                var lastResetDay by remember { mutableStateOf(
+                var lastResetDay by remember { mutableStateOf(StorageHelper.loadLastResetDay(context).ifEmpty {
                     java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
-                ) }
+                }) }
+
                 LaunchedEffect(Unit) {
                     val today = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
                     if (today != lastResetDay) {
                         dailyPoints = 0
                         bonusMultiplier = 1.0
                         lastResetDay = today
+                        StorageHelper.saveDailyPoints(context, 0)
+                        StorageHelper.saveBonusMultiplier(context, 1.0)
+                        StorageHelper.saveLastResetDay(context, today)
                     }
                 }
+
+                // Sauvegarde des points dès qu'ils changent
+                LaunchedEffect(totalPoints) { StorageHelper.saveTotalPoints(context, totalPoints) }
+                LaunchedEffect(dailyPoints) { StorageHelper.saveDailyPoints(context, dailyPoints) }
+                LaunchedEffect(bonusMultiplier) { StorageHelper.saveBonusMultiplier(context, bonusMultiplier) }
+                LaunchedEffect(lastResetDay) { StorageHelper.saveLastResetDay(context, lastResetDay) }
 
                 // Save tasks whenever they change
                 LaunchedEffect(tasks) {
@@ -240,6 +251,7 @@ class MainActivity : ComponentActivity() {
                                     }.sortedBy { it.isCompleted }
                                 },
                                 onTaskDelete = { task ->
+                                    task.imageUri?.let { ImageHelper.deleteImageFromInternalStorage(it) }
                                     tasks = tasks.filter { it.id != task.id }
                                 }
                             )
@@ -255,6 +267,7 @@ class MainActivity : ComponentActivity() {
                     onDismiss = { showAddDialog = false },
                     onSave = { title, subtitle, date, recurrence, priorite, imageUri ->
                         try {
+                            val savedImagePath = imageUri?.let { ImageHelper.saveImageToInternalStorage(context, it) }
                             val newTask = Task(
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
@@ -263,10 +276,11 @@ class MainActivity : ComponentActivity() {
                                 date = date,
                                 priorite = Priorite.valueOf(priorite.uppercase()),
                                 points = 10,
-                                imageUri = imageUri
+                                imageUri = savedImagePath
                             )
                             tasks = tasks + newTask
                         } catch (e: Exception) {
+                            val savedImagePath = imageUri?.let { ImageHelper.saveImageToInternalStorage(context, it) }
                             val newTask = Task(
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
@@ -275,7 +289,7 @@ class MainActivity : ComponentActivity() {
                                 date = date,
                                 priorite = Priorite.MOYENNE,
                                 points = 10,
-                                imageUri = imageUri
+                                imageUri = savedImagePath
                             )
                             tasks = tasks + newTask
                         }
@@ -288,8 +302,24 @@ class MainActivity : ComponentActivity() {
                         task = taskToEdit!!,
                         onDismiss = { showEditDialog = false },
                         onSave = { updatedTask ->
+                            val oldImage = tasks.firstOrNull { it.id == updatedTask.id }?.imageUri
+                            val savedImagePath = updatedTask.imageUri?.let {
+                                if (!it.startsWith(context.filesDir.absolutePath)) {
+                                    // nouvelle image : copier en stockage interne
+                                    val path = ImageHelper.saveImageToInternalStorage(context, it)
+                                    // supprimer l'ancienne si elle change
+                                    if (oldImage != null && oldImage != path) {
+                                        ImageHelper.deleteImageFromInternalStorage(oldImage)
+                                    }
+                                    path
+                                } else it // déjà en stockage interne, on garde
+                            } ?: run {
+                                // image supprimée : nettoyer l'ancienne
+                                if (oldImage != null) ImageHelper.deleteImageFromInternalStorage(oldImage)
+                                null
+                            }
                             tasks = tasks.map {
-                                if (it.id == updatedTask.id) updatedTask else it
+                                if (it.id == updatedTask.id) updatedTask.copy(imageUri = savedImagePath) else it
                             }.sortedBy { it.isCompleted }
                             showEditDialog = false
                         }

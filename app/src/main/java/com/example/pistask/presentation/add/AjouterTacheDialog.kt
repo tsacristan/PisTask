@@ -10,10 +10,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -22,7 +25,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import androidx.compose.ui.draw.clip
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,8 +49,8 @@ fun AjouterTacheDialog(
     initialRecurrence: String = "Quotidien",
     initialPriority: String = "Moyenne",
     initialImageUri: String? = null,
-    dialogTitle: String = "NOUVELLE TÂCHE",
-    buttonText: String = "+ AJOUTER AU GESTIONNAIRE"
+    dialogTitle: String = "NOUVELLE PIS'TÂCHE",
+    buttonText: String = "+ AJOUTER une nouvelle pis'tâche"
 ) {
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf(initialImageUri) }
@@ -73,13 +78,32 @@ fun AjouterTacheDialog(
     // Déclenchement de la validation
     var tentativeEnvoi by remember { mutableStateOf(false) }
 
+    var hour by remember { mutableStateOf(0) }
+    var minute by remember { mutableStateOf(0) }
+    var time by remember { mutableStateOf("") }
+
+    // Combine date et heure — si pas d'heure, on considère 23:59 pour la validation
+    val dateTimeForValidation = if (date.isNotEmpty() && time.isNotEmpty()) "${date} ${time}"
+                                else if (date.isNotEmpty()) "${date} 23:59"
+                                else ""
+
+    // Vérification date/heure dépassée
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val now = Calendar.getInstance().time
+    val isPast = if (dateTimeForValidation.isEmpty()) false else try {
+        val dt = sdf.parse(dateTimeForValidation)
+        dt != null && dt.before(now)
+    } catch (e: Exception) { false }
+
     val formulaireValide = title.trim().isNotEmpty()
             && date.trim().isNotEmpty()
             && recurrence.trim().isNotEmpty()
             && priority.trim().isNotEmpty()
+            && !isPast
 
     val erreurTitre      = tentativeEnvoi && title.trim().isEmpty()
     val erreurDate       = tentativeEnvoi && date.trim().isEmpty()
+    val erreurDatePasse  = tentativeEnvoi && date.trim().isNotEmpty() && isPast
     val erreurRecurrence = tentativeEnvoi && recurrence.trim().isEmpty()
     val erreurPriorite   = tentativeEnvoi && priority.trim().isEmpty()
 
@@ -95,10 +119,6 @@ fun AjouterTacheDialog(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    var hour by remember { mutableStateOf(0) }
-    var minute by remember { mutableStateOf(0) }
-    var time by remember { mutableStateOf("") }
-
     // Ajout du TimePickerDialog natif
     val timePickerDialog = TimePickerDialog(
         context,
@@ -113,16 +133,6 @@ fun AjouterTacheDialog(
         true
     )
 
-    // Combine date et heure
-    val dateTime = if (date.isNotEmpty() && time.isNotEmpty()) "${date} ${time}" else date
-
-    // Vérification date/heure dépassée
-    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm")
-    val now = Calendar.getInstance().time
-    val isPast = try {
-        val dt = sdf.parse(dateTime)
-        dt != null && dt.before(now)
-    } catch (e: Exception) { false }
 
     AnimatedVisibility(
         visible = show,
@@ -138,29 +148,41 @@ fun AjouterTacheDialog(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxHeight(0.75f)
                     .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .imePadding()
                     .clickable(enabled = false, onClick = {}),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-
-                    // ── En-tête ──────────────────────────────────────────────
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = dialogTitle,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Fermer")
-                        }
+                // ── En-tête FIXE ─────────────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = dialogTitle,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Fermer")
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                HorizontalDivider()
+
+                // ── Contenu SCROLLABLE ────────────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     // ── Titre ────────────────────────────────────────────────
                     Text(text = "DÉTAILS DE LA TÂCHE", color = Color.Gray, fontSize = 12.sp)
@@ -195,26 +217,98 @@ fun AjouterTacheDialog(
                         minLines = 2,
                         maxLines = 3
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    // Ajout photo
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Button(onClick = { galleryLauncher.launch("image/*") }, modifier = Modifier.padding(end = 8.dp)) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Galerie")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Galerie")
-                        }
-                        Button(onClick = { cameraLauncher.launch(null) }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Caméra")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Caméra")
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ── Zone image cliquable ──────────────────────────────────
+                    var showImageSourceDialog by remember { mutableStateOf(false) }
+                    Text(text = "IMAGE (OPTIONNELLE)", color = Color.Gray, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = imageUri.isNullOrBlank()) { showImageSourceDialog = true }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (imageUri.isNullOrBlank()) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Aucune image sélectionnée",
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Touchez pour ajouter une image",
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            } else {
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    val currentUri = imageUri
+                                    AsyncImage(
+                                        model = if (!currentUri.isNullOrBlank() && currentUri.startsWith("/")) "file://$currentUri" else currentUri,
+                                        contentDescription = "Image de la tâche",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(160.dp)
+                                            .clip(RoundedCornerShape(10.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                    ) {
+                                        IconButton(
+                                            onClick = { imageUri = null },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Supprimer l'image",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    if (imageUri != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = "Photo de la tâche",
-                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp))
+                    if (showImageSourceDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showImageSourceDialog = false },
+                            title = { Text("Ajouter une image") },
+                            text = { Text("Choisis comment ajouter l'image.") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    showImageSourceDialog = false
+                                    galleryLauncher.launch("image/*")
+                                }) { Text("Galerie") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    showImageSourceDialog = false
+                                    cameraLauncher.launch(null)
+                                }) { Text("Caméra") }
+                            }
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -263,9 +357,9 @@ fun AjouterTacheDialog(
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                                 )
                             }
-                            if (isPast && date.isNotEmpty() && time.isNotEmpty()) {
+                            if (erreurDatePasse) {
                                 Text(
-                                    text = "Date/heure butoir dépassée !",
+                                    text = "La date est déjà passée !",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -375,11 +469,8 @@ fun AjouterTacheDialog(
                             if (formulaireValide) {
                                 val dateFinale = if (date.isNotEmpty() && time.isNotEmpty()) {
                                     "${date.trim()} ${time.trim()}"
-                                } else if (date.isNotEmpty() && !date.contains(":")) {
-                                    // Si l'heure n'est pas présente, ajouter minuit
-                                    "${date.trim()} 00:00"
                                 } else {
-                                    date.trim()
+                                    "${date.trim()} 23:59"
                                 }
                                 onSave(
                                     title.trim(),
