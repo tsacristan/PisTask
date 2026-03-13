@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,13 +78,32 @@ fun AjouterTacheDialog(
     // Déclenchement de la validation
     var tentativeEnvoi by remember { mutableStateOf(false) }
 
+    var hour by remember { mutableStateOf(0) }
+    var minute by remember { mutableStateOf(0) }
+    var time by remember { mutableStateOf("") }
+
+    // Combine date et heure — si pas d'heure, on considère 23:59 pour la validation
+    val dateTimeForValidation = if (date.isNotEmpty() && time.isNotEmpty()) "${date} ${time}"
+                                else if (date.isNotEmpty()) "${date} 23:59"
+                                else ""
+
+    // Vérification date/heure dépassée
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val now = Calendar.getInstance().time
+    val isPast = if (dateTimeForValidation.isEmpty()) false else try {
+        val dt = sdf.parse(dateTimeForValidation)
+        dt != null && dt.before(now)
+    } catch (e: Exception) { false }
+
     val formulaireValide = title.trim().isNotEmpty()
             && date.trim().isNotEmpty()
             && recurrence.trim().isNotEmpty()
             && priority.trim().isNotEmpty()
+            && !isPast
 
     val erreurTitre      = tentativeEnvoi && title.trim().isEmpty()
     val erreurDate       = tentativeEnvoi && date.trim().isEmpty()
+    val erreurDatePasse  = tentativeEnvoi && date.trim().isNotEmpty() && isPast
     val erreurRecurrence = tentativeEnvoi && recurrence.trim().isEmpty()
     val erreurPriorite   = tentativeEnvoi && priority.trim().isEmpty()
 
@@ -99,10 +119,6 @@ fun AjouterTacheDialog(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    var hour by remember { mutableStateOf(0) }
-    var minute by remember { mutableStateOf(0) }
-    var time by remember { mutableStateOf("") }
-
     // Ajout du TimePickerDialog natif
     val timePickerDialog = TimePickerDialog(
         context,
@@ -117,16 +133,6 @@ fun AjouterTacheDialog(
         true
     )
 
-    // Combine date et heure
-    val dateTime = if (date.isNotEmpty() && time.isNotEmpty()) "${date} ${time}" else date
-
-    // Vérification date/heure dépassée
-    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm")
-    val now = Calendar.getInstance().time
-    val isPast = try {
-        val dt = sdf.parse(dateTime)
-        dt != null && dt.before(now)
-    } catch (e: Exception) { false }
 
     AnimatedVisibility(
         visible = show,
@@ -351,9 +357,9 @@ fun AjouterTacheDialog(
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                                 )
                             }
-                            if (isPast && date.isNotEmpty() && time.isNotEmpty()) {
+                            if (erreurDatePasse) {
                                 Text(
-                                    text = "Date/heure butoir dépassée !",
+                                    text = "La date est déjà passée !",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -463,11 +469,8 @@ fun AjouterTacheDialog(
                             if (formulaireValide) {
                                 val dateFinale = if (date.isNotEmpty() && time.isNotEmpty()) {
                                     "${date.trim()} ${time.trim()}"
-                                } else if (date.isNotEmpty() && !date.contains(":")) {
-                                    // Si l'heure n'est pas présente, ajouter minuit
-                                    "${date.trim()} 00:00"
                                 } else {
-                                    date.trim()
+                                    "${date.trim()} 23:59"
                                 }
                                 onSave(
                                     title.trim(),
