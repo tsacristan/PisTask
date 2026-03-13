@@ -227,7 +227,12 @@ fun HomeScene(
                         modifier = Modifier.size(56.dp),
                         contentScale = ContentScale.Crop
                     )
-                    Text(text = "Pïstask", color = VertPistacheFoncee, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Pistask",
+                        color = VertPistacheFoncee,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 0.dp)
+                    )
                 }
             }
 
@@ -362,7 +367,7 @@ fun HomeScene(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    contentPadding = PaddingValues(bottom = 180.dp)
                 ) {
                     items(filteredTasks) { task ->
                         val checkboxCenter = remember { mutableStateOf(Pair(0f, 0f)) }

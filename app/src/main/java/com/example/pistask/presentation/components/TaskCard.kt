@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.pistask.presentation.components.Priorite
 import com.example.pistask.presentation.components.Recurrence
 import com.example.pistask.presentation.components.Task
+import com.example.pistask.presentation.components.TaskImageThumbnail
 import com.example.pistask.presentation.theme.VertPistacheClair
 import com.example.pistask.presentation.theme.VertPistacheFoncee
 import com.example.pistask.presentation.theme.BleuTurquoise
@@ -133,6 +134,7 @@ fun TaskCard(
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
+
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -170,6 +172,20 @@ fun TaskCard(
                         Icon(Icons.Default.Delete, contentDescription = "Supprimer la tâche", tint = Color.Red)
                     }
                 }
+            }
+
+            if (!task.imageUri.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                val imageModel = if (task.imageUri.startsWith("/")) "file://${task.imageUri}" else task.imageUri
+                coil.compose.AsyncImage(
+                    model = imageModel,
+                    contentDescription = "Image de la tâche",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(10.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))

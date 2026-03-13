@@ -41,6 +41,7 @@ import com.example.pistask.presentation.components.prochaineDateRecurrence
 import com.example.pistask.presentation.components.recurrenceGenereProchaine
 import com.example.pistask.presentation.home.HomeScene
 import com.example.pistask.presentation.theme.PisTaskTheme
+import com.example.pistask.util.ImageHelper
 import com.example.pistask.util.NotificationHelper
 import com.example.pistask.util.StorageHelper
 import java.text.SimpleDateFormat
@@ -240,6 +241,7 @@ class MainActivity : ComponentActivity() {
                                     }.sortedBy { it.isCompleted }
                                 },
                                 onTaskDelete = { task ->
+                                    task.imageUri?.let { ImageHelper.deleteImageFromInternalStorage(it) }
                                     tasks = tasks.filter { it.id != task.id }
                                 }
                             )
@@ -255,6 +257,7 @@ class MainActivity : ComponentActivity() {
                     onDismiss = { showAddDialog = false },
                     onSave = { title, subtitle, date, recurrence, priorite, imageUri ->
                         try {
+                            val savedImagePath = imageUri?.let { ImageHelper.saveImageToInternalStorage(context, it) }
                             val newTask = Task(
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
@@ -263,10 +266,11 @@ class MainActivity : ComponentActivity() {
                                 date = date,
                                 priorite = Priorite.valueOf(priorite.uppercase()),
                                 points = 10,
-                                imageUri = imageUri
+                                imageUri = savedImagePath
                             )
                             tasks = tasks + newTask
                         } catch (e: Exception) {
+                            val savedImagePath = imageUri?.let { ImageHelper.saveImageToInternalStorage(context, it) }
                             val newTask = Task(
                                 id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
                                 title = title,
@@ -275,7 +279,7 @@ class MainActivity : ComponentActivity() {
                                 date = date,
                                 priorite = Priorite.MOYENNE,
                                 points = 10,
-                                imageUri = imageUri
+                                imageUri = savedImagePath
                             )
                             tasks = tasks + newTask
                         }
@@ -288,8 +292,24 @@ class MainActivity : ComponentActivity() {
                         task = taskToEdit!!,
                         onDismiss = { showEditDialog = false },
                         onSave = { updatedTask ->
+                            val oldImage = tasks.firstOrNull { it.id == updatedTask.id }?.imageUri
+                            val savedImagePath = updatedTask.imageUri?.let {
+                                if (!it.startsWith(context.filesDir.absolutePath)) {
+                                    // nouvelle image : copier en stockage interne
+                                    val path = ImageHelper.saveImageToInternalStorage(context, it)
+                                    // supprimer l'ancienne si elle change
+                                    if (oldImage != null && oldImage != path) {
+                                        ImageHelper.deleteImageFromInternalStorage(oldImage)
+                                    }
+                                    path
+                                } else it // déjà en stockage interne, on garde
+                            } ?: run {
+                                // image supprimée : nettoyer l'ancienne
+                                if (oldImage != null) ImageHelper.deleteImageFromInternalStorage(oldImage)
+                                null
+                            }
                             tasks = tasks.map {
-                                if (it.id == updatedTask.id) updatedTask else it
+                                if (it.id == updatedTask.id) updatedTask.copy(imageUri = savedImagePath) else it
                             }.sortedBy { it.isCompleted }
                             showEditDialog = false
                         }
