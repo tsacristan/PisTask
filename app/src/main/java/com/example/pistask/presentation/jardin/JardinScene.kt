@@ -191,7 +191,7 @@ fun JardinScene(
                                 val newGrowth = (growth + 0.05f).coerceAtMost(1.0f)
                                 growth = newGrowth
                                 onPointsChanged(newPoints)
-                                StorageHelper.savePoints(context, newPoints)
+                                StorageHelper.saveTotalPoints(context, newPoints)
                                 StorageHelper.saveGrowth(context, newGrowth)
                             }
                         },

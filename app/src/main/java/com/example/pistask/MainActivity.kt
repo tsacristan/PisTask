@@ -172,11 +172,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Sauvegarder les points dès qu'ils changent
-                LaunchedEffect(totalPoints) {
-                    StorageHelper.savePoints(context, totalPoints)
-                }
-
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
