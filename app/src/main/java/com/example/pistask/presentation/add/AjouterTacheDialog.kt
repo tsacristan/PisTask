@@ -14,6 +14,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -44,8 +46,8 @@ fun AjouterTacheDialog(
     initialRecurrence: String = "Quotidien",
     initialPriority: String = "Moyenne",
     initialImageUri: String? = null,
-    dialogTitle: String = "NOUVELLE TÂCHE",
-    buttonText: String = "+ AJOUTER AU GESTIONNAIRE"
+    dialogTitle: String = "NOUVELLE PIS'TÂCHE",
+    buttonText: String = "+ AJOUTER une nouvelle pis'tâche"
 ) {
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf(initialImageUri) }
@@ -139,11 +141,17 @@ fun AjouterTacheDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .imePadding()
                     .clickable(enabled = false, onClick = {}),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
 
                     // ── En-tête ──────────────────────────────────────────────
                     Row(
